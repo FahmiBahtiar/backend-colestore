@@ -1,8 +1,17 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './infrastructure/prisma';
+import { ActivityLogService } from './application/services';
+import { ACTIVITY_LOG_REPOSITORY } from './domain/repositories/tokens';
+import { PrismaActivityLogRepository } from './infrastructure/repositories';
+import { GlobalExceptionFilter } from './presentation/filters';
+import {
+  ActivityLogInterceptor,
+  LoggingInterceptor,
+  TransformInterceptor,
+} from './presentation/interceptors';
 import {
   appConfig,
   databaseConfig,
@@ -46,6 +55,27 @@ import { AppService } from './app.service';
   controllers: [AppController],
   providers: [
     AppService,
+    ActivityLogService,
+    {
+      provide: ACTIVITY_LOG_REPOSITORY,
+      useClass: PrismaActivityLogRepository,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ActivityLogInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
+    },
     // Global rate-limiting guard
     {
       provide: APP_GUARD,
