@@ -10,6 +10,8 @@ export interface OrderItemProps {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -19,7 +21,7 @@ export class OrderItem extends BaseEntity {
   private props: OrderItemProps;
 
   private constructor(props: OrderItemProps) {
-    super({ id: props.id, createdAt: new Date(0) });
+    super(props);
     this.props = { ...props };
     this.validate();
   }

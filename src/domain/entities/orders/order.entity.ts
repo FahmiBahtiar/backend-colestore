@@ -135,6 +135,14 @@ export class Order extends BaseEntity {
     if (this.props.status === 'DELIVERED' && !this.props.deliveredById) {
       throw new DomainError('Delivered orders require delivery admin id');
     }
+    if (
+      this.props.status === 'DELIVERED' &&
+      (!this.props.deliveredAt ||
+        !(this.props.deliveredAt instanceof Date) ||
+        Number.isNaN(this.props.deliveredAt.getTime()))
+    ) {
+      throw new DomainError('Delivered orders require a valid delivery date');
+    }
   }
 
   private ensureStatus(allowedStatuses: OrderStatus[]): void {

@@ -72,6 +72,23 @@ describe('Order entity', () => {
   it('rejects delivery from pending orders', () => {
     expect(() => makeOrder().deliver('admin-1')).toThrow(DomainError);
   });
+
+  it('rejects delivered orders without a valid delivery date', () => {
+    expect(() =>
+      makeOrder({
+        status: 'DELIVERED',
+        deliveredById: 'admin-1',
+        deliveredAt: null,
+      }),
+    ).toThrow(DomainError);
+    expect(() =>
+      makeOrder({
+        status: 'DELIVERED',
+        deliveredById: 'admin-1',
+        deliveredAt: new Date('invalid-date'),
+      }),
+    ).toThrow(DomainError);
+  });
 });
 
 describe('OrderItem entity', () => {
@@ -85,6 +102,8 @@ describe('OrderItem entity', () => {
       quantity: 2,
       unitPrice: 50_000,
       subtotal: 100_000,
+      createdAt: now,
+      updatedAt: now,
     });
 
     expect(item.calculateSubtotal()).toBe(100_000);
@@ -101,6 +120,25 @@ describe('OrderItem entity', () => {
         quantity: 2,
         unitPrice: 50_000,
         subtotal: 90_000,
+        createdAt: now,
+        updatedAt: now,
+      }),
+    ).toThrow(DomainError);
+  });
+
+  it('rejects invalid order item timestamps', () => {
+    expect(() =>
+      OrderItem.create({
+        id: 'item-1',
+        orderId: 'order-1',
+        productId: 'product-1',
+        variantId: null,
+        couponId: null,
+        quantity: 1,
+        unitPrice: 50_000,
+        subtotal: 50_000,
+        createdAt: new Date('invalid-date'),
+        updatedAt: now,
       }),
     ).toThrow(DomainError);
   });
