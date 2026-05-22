@@ -4,6 +4,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './infrastructure/prisma';
 import { ApplicationModule } from './application/application.module';
+import { PresentationModule } from './presentation';
 import { ActivityLogService } from './application/services';
 import { ACTIVITY_LOG_REPOSITORY } from './domain/repositories/tokens';
 import { PrismaActivityLogRepository } from './infrastructure/repositories';
@@ -55,6 +56,9 @@ import { AppService } from './app.service';
 
     // Application use cases and repository bindings
     ApplicationModule,
+
+    // HTTP presentation layer
+    PresentationModule,
   ],
   controllers: [AppController],
   providers: [
