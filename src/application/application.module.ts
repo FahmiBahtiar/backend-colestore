@@ -1,4 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
 import {
   COUPON_REPOSITORY,
   ORDER_ITEM_REPOSITORY,
@@ -24,11 +26,15 @@ import {
   GetOrderDetailUseCase,
   GetUserOrdersUseCase,
   ListProductsUseCase,
+  LoginUseCase,
   PlaceOrderUseCase,
   ProcessXenditWebhookUseCase,
   RedeemCouponUseCase,
+  RefreshTokenUseCase,
+  RegisterUserUseCase,
   RefundOrderUseCase,
   StartOrderProcessingUseCase,
+  TokenService,
   UpdateProductUseCase,
   ValidateCouponUseCase,
 } from './use-cases';
@@ -46,6 +52,10 @@ const repositoryProviders = [
 ];
 
 const useCaseProviders = [
+  TokenService,
+  RegisterUserUseCase,
+  LoginUseCase,
+  RefreshTokenUseCase,
   CreateProductUseCase,
   UpdateProductUseCase,
   CreateProductVariantUseCase,
@@ -63,8 +73,23 @@ const useCaseProviders = [
 ];
 
 @Module({
-  imports: [forwardRef(() => InfrastructureModule)],
+  imports: [
+    forwardRef(() => InfrastructureModule),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.getOrThrow<string>('jwt.secret'),
+        signOptions: {
+          expiresIn: configService.get<string>(
+            'jwt.accessExpiration',
+            '15m',
+          ) as JwtSignOptions['expiresIn'],
+        },
+      }),
+    }),
+  ],
   providers: [...repositoryProviders, ...useCaseProviders],
-  exports: [...repositoryProviders, ...useCaseProviders],
+  exports: [JwtModule, ...repositoryProviders, ...useCaseProviders],
 })
 export class ApplicationModule {}

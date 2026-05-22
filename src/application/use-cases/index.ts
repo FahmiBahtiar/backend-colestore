@@ -1,3 +1,4 @@
+export * from './auth';
 export * from './coupons';
 export * from './fulfillment';
 export * from './orders';

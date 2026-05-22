@@ -101,10 +101,11 @@ export class ActivityLogInterceptor implements NestInterceptor {
   }
 
   private resolveEntityType(path: string): string {
-    const [segment] = path
+    const segments = path
       .replace(/^\/api\/v\d+\/?/, '')
       .split('/')
       .filter(Boolean);
+    const [segment] = segments[0] === 'admin' ? segments.slice(1) : segments;
     return segment?.replace(/-/g, '_') ?? 'system';
   }
 

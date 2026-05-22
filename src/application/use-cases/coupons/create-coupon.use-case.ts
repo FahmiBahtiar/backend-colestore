@@ -3,6 +3,7 @@ import { Coupon } from '../../../domain/entities';
 import { CouponEntity, ICouponRepository } from '../../../domain/repositories';
 import { COUPON_REPOSITORY } from '../../../domain/repositories/tokens';
 import { CouponResponseDto, CreateCouponInputDto } from '../../dtos';
+import { throwBadRequestForDomainError } from '../../errors';
 import { CouponMapper } from '../../mappers';
 
 @Injectable()
@@ -21,19 +22,24 @@ export class CreateCouponUseCase {
     }
 
     const now = new Date();
-    const coupon = Coupon.create({
-      id: 'new-coupon',
-      code,
-      discountType: input.discountType,
-      discountValue: input.discountValue,
-      minOrderAmount: input.minOrderAmount ?? 0,
-      maxUses: input.maxUses ?? null,
-      usedCount: 0,
-      expiresAt: input.expiresAt ?? null,
-      isActive: input.isActive ?? true,
-      createdAt: now,
-      updatedAt: now,
-    });
+    let coupon: Coupon;
+    try {
+      coupon = Coupon.create({
+        id: 'new-coupon',
+        code,
+        discountType: input.discountType,
+        discountValue: input.discountValue,
+        minOrderAmount: input.minOrderAmount ?? 0,
+        maxUses: input.maxUses ?? null,
+        usedCount: 0,
+        expiresAt: input.expiresAt ?? null,
+        isActive: input.isActive ?? true,
+        createdAt: now,
+        updatedAt: now,
+      });
+    } catch (error) {
+      throwBadRequestForDomainError(error);
+    }
 
     const created = await this.couponRepository.create(
       this.toCreateData(coupon.toPrimitives()),

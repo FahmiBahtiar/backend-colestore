@@ -6,6 +6,7 @@ import {
 } from '../../../domain/repositories';
 import { PRODUCT_REPOSITORY } from '../../../domain/repositories/tokens';
 import { ProductResponseDto, UpdateProductInputDto } from '../../dtos';
+import { throwBadRequestForDomainError } from '../../errors';
 import { ProductMapper } from '../../mappers';
 
 @Injectable()
@@ -22,16 +23,20 @@ export class UpdateProductUseCase {
       throw new NotFoundException('Product not found');
     }
 
-    Product.create({
-      ...existing,
-      name: input.name ?? existing.name,
-      description: input.description ?? existing.description,
-      basePrice: input.basePrice ?? existing.basePrice,
-      isActive: input.isActive ?? existing.isActive,
-      stockQuantity: input.stockQuantity ?? existing.stockQuantity,
-      digitalFileKey: input.digitalFileKey ?? existing.digitalFileKey,
-      categoryId: input.categoryId ?? existing.categoryId,
-    });
+    try {
+      Product.create({
+        ...existing,
+        name: input.name ?? existing.name,
+        description: input.description ?? existing.description,
+        basePrice: input.basePrice ?? existing.basePrice,
+        isActive: input.isActive ?? existing.isActive,
+        stockQuantity: input.stockQuantity ?? existing.stockQuantity,
+        digitalFileKey: input.digitalFileKey ?? existing.digitalFileKey,
+        categoryId: input.categoryId ?? existing.categoryId,
+      });
+    } catch (error) {
+      throwBadRequestForDomainError(error);
+    }
 
     const updated = await this.productRepository.update(
       input.id,

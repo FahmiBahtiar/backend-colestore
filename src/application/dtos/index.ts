@@ -1,3 +1,4 @@
+export type * from './auth';
 export type * from './coupons';
 export type * from './fulfillment';
 export type * from './orders';
