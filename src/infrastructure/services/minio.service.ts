@@ -8,6 +8,9 @@ export class MinioService implements OnModuleInit {
   private readonly bucketName: string;
 
   constructor(private readonly configService: ConfigService) {
+    const accessKey = this.getCredential('accessKey', 'minioadmin');
+    const secretKey = this.getCredential('secretKey', 'minioadmin123');
+
     this.bucketName = this.configService.get<string>(
       'minio.bucketName',
       'colestore',
@@ -16,15 +19,27 @@ export class MinioService implements OnModuleInit {
       endPoint: this.configService.get<string>('minio.endPoint', 'localhost'),
       port: this.configService.get<number>('minio.port', 9000),
       useSSL: this.configService.get<boolean>('minio.useSSL', false),
-      accessKey: this.configService.get<string>(
-        'minio.accessKey',
-        'minioadmin',
-      ),
-      secretKey: this.configService.get<string>(
-        'minio.secretKey',
-        'minioadmin123',
-      ),
+      accessKey,
+      secretKey,
     });
+  }
+
+  private getCredential(
+    key: 'accessKey' | 'secretKey',
+    fallback: string,
+  ): string {
+    const value = this.configService.get<string>(`minio.${key}`);
+    if (value) return value;
+
+    const nodeEnv = this.configService.get<string>(
+      'app.nodeEnv',
+      'development',
+    );
+    if (nodeEnv === 'development' || nodeEnv === 'test') return fallback;
+
+    throw new Error(
+      `MINIO_${key === 'accessKey' ? 'ROOT_USER' : 'ROOT_PASSWORD'} is not configured`,
+    );
   }
 
   /** Ensure the configured bucket exists during application startup. */

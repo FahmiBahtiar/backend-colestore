@@ -14,6 +14,7 @@ export const REPOSITORY_TOKENS = {
 export const QUEUE_NAMES = {
   ORDER_PROCESSING: 'order-processing',
   PAYMENT_WEBHOOK: 'payment-webhook',
+  ACTIVITY_LOG: 'activity-log',
   NOTIFICATION: 'notification',
   FILE_PROCESSING: 'file-processing',
 } as const;

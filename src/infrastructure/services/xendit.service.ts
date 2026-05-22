@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Xendit } from 'xendit-node';
 import {
@@ -63,7 +67,7 @@ export class XenditService implements IPaymentGatewayPort {
       this.asString(data.external_id);
 
     if (!invoiceId) {
-      throw new UnauthorizedException('Invalid Xendit invoice identifier');
+      throw new BadRequestException('Invalid Xendit invoice identifier');
     }
 
     return Promise.resolve({
@@ -82,7 +86,7 @@ export class XenditService implements IPaymentGatewayPort {
 
   private assertWebhookPayload(payload: unknown): Record<string, unknown> {
     if (!payload || typeof payload !== 'object') {
-      throw new UnauthorizedException('Invalid Xendit webhook payload');
+      throw new BadRequestException('Invalid Xendit webhook payload');
     }
     return payload as Record<string, unknown>;
   }

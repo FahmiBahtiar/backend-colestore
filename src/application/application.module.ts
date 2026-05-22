@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import {
   COUPON_REPOSITORY,
   ORDER_ITEM_REPOSITORY,
@@ -63,7 +63,7 @@ const useCaseProviders = [
 ];
 
 @Module({
-  imports: [InfrastructureModule],
+  imports: [forwardRef(() => InfrastructureModule)],
   providers: [...repositoryProviders, ...useCaseProviders],
   exports: [...repositoryProviders, ...useCaseProviders],
 })

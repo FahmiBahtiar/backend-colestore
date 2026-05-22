@@ -1,8 +1,4 @@
-export const QUEUE_NAMES = {
-  PAYMENT_WEBHOOK: 'payment-webhook',
-  ORDER_PROCESSING: 'order-processing',
-  ACTIVITY_LOG: 'activity-log',
-} as const;
+export { QUEUE_NAMES } from '../../common/constants';
 
 export const DEFAULT_JOB_OPTIONS = {
   attempts: 3,
