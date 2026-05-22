@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './infrastructure/prisma';
+import { ApplicationModule } from './application/application.module';
 import { ActivityLogService } from './application/services';
 import { ACTIVITY_LOG_REPOSITORY } from './domain/repositories/tokens';
 import { PrismaActivityLogRepository } from './infrastructure/repositories';
@@ -51,6 +52,9 @@ import { AppService } from './app.service';
 
     // Database
     PrismaModule,
+
+    // Application use cases and repository bindings
+    ApplicationModule,
   ],
   controllers: [AppController],
   providers: [
