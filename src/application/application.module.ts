@@ -7,6 +7,7 @@ import {
   PRODUCT_VARIANT_REPOSITORY,
   USER_REPOSITORY,
 } from '../domain/repositories/tokens';
+import { InfrastructureModule } from '../infrastructure';
 import {
   PrismaCouponRepository,
   PrismaOrderItemRepository,
@@ -15,7 +16,6 @@ import {
   PrismaProductVariantRepository,
   PrismaUserRepository,
 } from '../infrastructure/repositories';
-import { PAYMENT_GATEWAY, UnavailablePaymentGateway } from './interfaces';
 import {
   CreateCouponUseCase,
   CreateProductUseCase,
@@ -43,7 +43,6 @@ const repositoryProviders = [
   { provide: COUPON_REPOSITORY, useClass: PrismaCouponRepository },
   { provide: ORDER_REPOSITORY, useClass: PrismaOrderRepository },
   { provide: ORDER_ITEM_REPOSITORY, useClass: PrismaOrderItemRepository },
-  { provide: PAYMENT_GATEWAY, useClass: UnavailablePaymentGateway },
 ];
 
 const useCaseProviders = [
@@ -64,6 +63,7 @@ const useCaseProviders = [
 ];
 
 @Module({
+  imports: [InfrastructureModule],
   providers: [...repositoryProviders, ...useCaseProviders],
   exports: [...repositoryProviders, ...useCaseProviders],
 })

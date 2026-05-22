@@ -5,7 +5,6 @@ export {
   type PaymentInvoiceResult,
   type PaymentWebhookPayload,
 } from './payment-gateway.port';
-export { UnavailablePaymentGateway } from './unavailable-payment-gateway';
 export type {
   IOrderItemRepositoryPort,
   OrderItemRecord,
