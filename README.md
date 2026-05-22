@@ -31,6 +31,124 @@
 $ npm install
 ```
 
+## Cara menggunakan project Colestore Backend
+
+Bagian ini adalah panduan singkat untuk menjalankan backend Colestore secara lokal. Konten bawaan NestJS di bawah tetap dipertahankan sebagai referensi tambahan.
+
+### Prasyarat
+
+- Node.js dan npm sudah terpasang.
+- Docker dan Docker Compose tersedia untuk menjalankan PostgreSQL, Redis, dan MinIO.
+- Jalankan semua perintah dari folder `backend`.
+
+### 1. Masuk ke folder backend
+
+```bash
+$ cd backend
+```
+
+### 2. Install dependency
+
+```bash
+$ npm install
+```
+
+### 3. Siapkan environment
+
+Salin file contoh environment, lalu isi nilai yang masih kosong seperti password database, Redis, MinIO, JWT, dan kredensial Xendit bila diperlukan.
+
+```bash
+$ cp .env.example .env
+```
+
+Minimal variabel yang perlu diperhatikan:
+
+- `PORT` default `3001`.
+- `API_PREFIX` default `api/v1`.
+- `DATABASE_URL` untuk koneksi PostgreSQL.
+- `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, dan `MINIO_ROOT_PASSWORD` wajib diisi karena digunakan oleh `docker-compose.yml`.
+- `JWT_SECRET` dan `JWT_REFRESH_SECRET` wajib diisi untuk fitur autentikasi.
+- `CORS_ORIGIN` default `http://localhost:3000`.
+
+### 4. Jalankan service pendukung
+
+```bash
+$ docker compose up -d
+```
+
+Service yang dijalankan:
+
+- PostgreSQL di port sesuai `POSTGRES_PORT` atau default `5432`.
+- Redis di port sesuai `REDIS_PORT` atau default `6379`.
+- MinIO API di port `9000` dan console di port `9001` secara default.
+
+### 5. Generate Prisma Client dan migrasi database
+
+```bash
+$ npm run prisma:generate
+$ npm run prisma:migrate
+```
+
+Untuk production atau environment yang sudah memiliki migration final, gunakan:
+
+```bash
+$ npm run prisma:migrate:prod
+```
+
+### 6. Jalankan aplikasi
+
+```bash
+# development biasa
+$ npm run start
+
+# development dengan watch mode
+$ npm run start:dev
+```
+
+Backend akan berjalan di:
+
+```text
+http://localhost:3001/api/v1
+```
+
+Swagger tersedia saat bukan production di:
+
+```text
+http://localhost:3001/docs
+```
+
+### 7. Perintah lain yang sering digunakan
+
+```bash
+# buka Prisma Studio
+$ npm run prisma:studio
+
+# lint dan auto-fix
+$ npm run lint
+
+# format kode
+$ npm run format
+
+# build aplikasi
+$ npm run build
+
+# jalankan hasil build
+$ npm run start:prod
+```
+
+### 8. Menjalankan test
+
+```bash
+# unit test
+$ npm run test
+
+# e2e test
+$ npm run test:e2e
+
+# coverage
+$ npm run test:cov
+```
+
 ## Compile and run the project
 
 ```bash
