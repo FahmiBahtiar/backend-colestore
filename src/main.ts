@@ -6,11 +6,6 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import { AppModule } from './app.module';
-import { GlobalExceptionFilter } from './presentation/filters';
-import {
-  LoggingInterceptor,
-  TransformInterceptor,
-} from './presentation/interceptors';
 
 /**
  * Bootstrap the NestJS application with all global middleware,
@@ -61,15 +56,6 @@ async function bootstrap(): Promise<void> {
         enableImplicitConversion: true,
       },
     }),
-  );
-
-  // Global exception filter
-  app.useGlobalFilters(new GlobalExceptionFilter());
-
-  // Global interceptors
-  app.useGlobalInterceptors(
-    new LoggingInterceptor(),
-    new TransformInterceptor(),
   );
 
   // Swagger (development only)
