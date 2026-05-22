@@ -27,10 +27,7 @@ export class TokenService {
 
   private signAccessToken(user: UserEntity): string {
     return this.jwtService.sign(this.buildPayload(user), {
-      secret: this.configService.get<string>(
-        'jwt.secret',
-        'change-me-in-production',
-      ),
+      secret: this.configService.getOrThrow<string>('jwt.secret'),
       expiresIn: this.configService.get<string>(
         'jwt.accessExpiration',
         '15m',
@@ -40,10 +37,7 @@ export class TokenService {
 
   private signRefreshToken(user: UserEntity): string {
     return this.jwtService.sign(this.buildPayload(user), {
-      secret: this.configService.get<string>(
-        'jwt.refreshSecret',
-        'change-refresh-in-production',
-      ),
+      secret: this.configService.getOrThrow<string>('jwt.refreshSecret'),
       expiresIn: this.configService.get<string>(
         'jwt.refreshExpiration',
         '7d',

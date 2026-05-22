@@ -31,10 +31,7 @@ export class RefreshTokenUseCase {
   private async verifyRefreshToken(refreshToken: string): Promise<JwtPayload> {
     try {
       return await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
-        secret: this.configService.get<string>(
-          'jwt.refreshSecret',
-          'change-refresh-in-production',
-        ),
+        secret: this.configService.getOrThrow<string>('jwt.refreshSecret'),
       });
     } catch {
       throw new UnauthorizedException('Invalid refresh token');

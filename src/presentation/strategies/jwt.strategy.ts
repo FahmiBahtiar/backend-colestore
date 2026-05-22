@@ -13,10 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
   ) {
-    const jwtSecret = configService.get<string>(
-      'jwt.secret',
-      'change-me-in-production',
-    );
+    const jwtSecret = configService.getOrThrow<string>('jwt.secret');
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

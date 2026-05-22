@@ -25,17 +25,16 @@ export const minioConfig = registerAs('minio', () => ({
   endPoint: process.env.MINIO_ENDPOINT || 'localhost',
   port: parseInt(process.env.MINIO_API_PORT || '9000', 10),
   useSSL: process.env.MINIO_USE_SSL === 'true',
-  accessKey: process.env.MINIO_ROOT_USER || 'minioadmin',
-  secretKey: process.env.MINIO_ROOT_PASSWORD || 'minioadmin123',
+  accessKey: process.env.MINIO_ROOT_USER,
+  secretKey: process.env.MINIO_ROOT_PASSWORD,
   bucketName: process.env.MINIO_BUCKET_NAME || 'colestore',
 }));
 
 /** JWT authentication configuration */
 export const jwtConfig = registerAs('jwt', () => ({
-  secret: process.env.JWT_SECRET || 'change-me-in-production',
+  secret: process.env.JWT_SECRET,
   accessExpiration: process.env.JWT_ACCESS_EXPIRATION || '15m',
-  refreshSecret:
-    process.env.JWT_REFRESH_SECRET || 'change-refresh-in-production',
+  refreshSecret: process.env.JWT_REFRESH_SECRET,
   refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
 }));
 

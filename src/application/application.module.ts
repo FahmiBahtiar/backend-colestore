@@ -79,10 +79,7 @@ const useCaseProviders = [
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>(
-          'jwt.secret',
-          'change-me-in-production',
-        ),
+        secret: configService.getOrThrow<string>('jwt.secret'),
         signOptions: {
           expiresIn: configService.get<string>(
             'jwt.accessExpiration',
