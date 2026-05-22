@@ -27,9 +27,11 @@ import {
   IOrderItemRepositoryPort,
   IPaymentGatewayPort,
   IProductVariantRepositoryPort,
+  ProductVariantRecord,
   PAYMENT_GATEWAY,
 } from '../../interfaces';
 import { PlaceOrderInputDto, PlaceOrderResultDto } from '../../dtos';
+import { throwBadRequestForDomainError } from '../../errors';
 import { OrderMapper } from '../../mappers';
 
 @Injectable()
@@ -67,14 +69,16 @@ export class PlaceOrderUseCase {
         const product = Product.create(productRecord);
         product.ensurePurchasable();
 
-        const variantRecord = item.variantId
-          ? await this.variantRepository.findById(item.variantId)
-          : null;
+        const variantRecord = await this.resolveVariantRecord(
+          productRecord,
+          item.variantId ?? null,
+        );
         const variant = variantRecord
           ? ProductVariant.create(variantRecord)
           : null;
-        const unitPrice = product.resolveUnitPrice(variant);
-        product.decreaseStock(item.quantity, variant);
+        const unitPrice = this.resolveUnitPrice(product, variant);
+        this.decreaseStock(product, item.quantity, variant);
+        await this.persistStock(product, variant);
 
         return {
           productId: item.productId,
@@ -94,7 +98,9 @@ export class PlaceOrderUseCase {
       ? await this.couponRepository.findByCode(input.couponCode.toUpperCase())
       : null;
     const coupon = couponRecord ? Coupon.create(couponRecord) : null;
-    const discountAmount = coupon ? coupon.calculateDiscount(totalAmount) : 0;
+    const discountAmount = coupon
+      ? this.calculateDiscount(coupon, totalAmount)
+      : 0;
     const finalAmount = totalAmount - discountAmount;
     const now = new Date();
 
@@ -130,7 +136,7 @@ export class PlaceOrderUseCase {
       })),
     );
     if (couponRecord) {
-      coupon?.markRedeemed();
+      this.markCouponRedeemed(coupon);
       await this.couponRepository.incrementUsedCount(couponRecord.id);
     }
 
@@ -168,5 +174,87 @@ export class PlaceOrderUseCase {
       deliveryNote: order.deliveryNote,
       couponId: order.couponId,
     };
+  }
+
+  private async resolveVariantRecord(
+    product: { id: string; hasVariants: boolean },
+    variantId: string | null,
+  ): Promise<ProductVariantRecord | null> {
+    if (!product.hasVariants && variantId) {
+      throw new BadRequestException('Product does not support variants');
+    }
+    if (product.hasVariants && !variantId) {
+      throw new BadRequestException('Variant is required for this product');
+    }
+    if (!variantId) return null;
+
+    const variant = await this.variantRepository.findById(variantId);
+    if (!variant) {
+      throw new NotFoundException('Product variant not found');
+    }
+    if (variant.productId !== product.id) {
+      throw new BadRequestException(
+        'Product variant does not belong to product',
+      );
+    }
+    return variant;
+  }
+
+  private resolveUnitPrice(
+    product: Product,
+    variant: ProductVariant | null,
+  ): number {
+    try {
+      return product.resolveUnitPrice(variant);
+    } catch (error) {
+      throwBadRequestForDomainError(error);
+    }
+  }
+
+  private decreaseStock(
+    product: Product,
+    quantity: number,
+    variant: ProductVariant | null,
+  ): void {
+    try {
+      product.decreaseStock(quantity, variant);
+    } catch (error) {
+      throwBadRequestForDomainError(error);
+    }
+  }
+
+  private async persistStock(
+    product: Product,
+    variant: ProductVariant | null,
+  ): Promise<void> {
+    if (variant) {
+      const props = variant.toPrimitives();
+      await this.variantRepository.update(props.id, {
+        stockQuantity: props.stockQuantity,
+      });
+      return;
+    }
+
+    const props = product.toPrimitives();
+    await this.productRepository.update(props.id, {
+      stockQuantity: props.stockQuantity,
+    });
+  }
+
+  private calculateDiscount(coupon: Coupon, totalAmount: number): number {
+    try {
+      return coupon.calculateDiscount(totalAmount);
+    } catch (error) {
+      throwBadRequestForDomainError(error);
+    }
+  }
+
+  private markCouponRedeemed(coupon: Coupon | null): void {
+    if (!coupon) return;
+    try {
+      coupon.markRedeemed();
+    } catch (error) {
+      throwBadRequestForDomainError(error);
+    }
   }
 }

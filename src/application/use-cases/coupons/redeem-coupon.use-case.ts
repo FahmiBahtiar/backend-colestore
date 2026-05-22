@@ -3,6 +3,7 @@ import { Coupon } from '../../../domain/entities';
 import { ICouponRepository } from '../../../domain/repositories';
 import { COUPON_REPOSITORY } from '../../../domain/repositories/tokens';
 import { ValidateCouponInputDto, ValidateCouponResultDto } from '../../dtos';
+import { throwBadRequestForDomainError } from '../../errors';
 import { CouponMapper } from '../../mappers';
 
 @Injectable()
@@ -24,8 +25,7 @@ export class RedeemCouponUseCase {
     }
 
     const coupon = Coupon.create(couponRecord);
-    const discountAmount = coupon.calculateDiscount(input.orderAmount);
-    coupon.markRedeemed();
+    const discountAmount = this.redeem(coupon, input.orderAmount);
     await this.couponRepository.incrementUsedCount(couponRecord.id);
 
     return {
@@ -33,5 +33,15 @@ export class RedeemCouponUseCase {
       discountAmount,
       finalAmount: input.orderAmount - discountAmount,
     };
+  }
+
+  private redeem(coupon: Coupon, orderAmount: number): number {
+    try {
+      const discountAmount = coupon.calculateDiscount(orderAmount);
+      coupon.markRedeemed();
+      return discountAmount;
+    } catch (error) {
+      throwBadRequestForDomainError(error);
+    }
   }
 }

@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ProductVariant } from '../../../domain/entities';
 import { IProductRepository } from '../../../domain/repositories';
 import {
@@ -33,7 +38,7 @@ export class CreateProductVariantUseCase {
       throw new NotFoundException('Product not found');
     }
     if (!product.hasVariants) {
-      throw new NotFoundException('Product does not support variants');
+      throw new BadRequestException('Product does not support variants');
     }
 
     const now = new Date();
