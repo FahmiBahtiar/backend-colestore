@@ -4,11 +4,13 @@ import { ApplicationModule } from '../application/application.module';
 import { InfrastructureModule } from '../infrastructure';
 import {
   AuthController,
+  CategoriesController,
   CouponsController,
   FulfillmentController,
   OrdersController,
   PaymentsController,
   ProductsController,
+  UsersController,
 } from './controllers';
 import { JwtStrategy } from './strategies';
 
@@ -20,6 +22,8 @@ import { JwtStrategy } from './strategies';
   ],
   controllers: [
     AuthController,
+    CategoriesController,
+    UsersController,
     ProductsController,
     CouponsController,
     OrdersController,

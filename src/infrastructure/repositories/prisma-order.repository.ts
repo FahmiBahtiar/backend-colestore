@@ -134,6 +134,8 @@ export class PrismaOrderRepository implements IOrderRepository {
         finalAmount: new Prisma.Decimal(data.finalAmount ?? 0),
         status: data.status ?? 'PENDING',
         xenditInvoiceId: data.xenditInvoiceId,
+        xenditInvoiceUrl: data.xenditInvoiceUrl,
+        xenditInvoiceExpiresAt: data.xenditInvoiceExpiresAt,
         couponId: data.couponId,
       },
       include: {
@@ -157,6 +159,12 @@ export class PrismaOrderRepository implements IOrderRepository {
         ...(data.status !== undefined && { status: data.status }),
         ...(data.xenditInvoiceId !== undefined && {
           xenditInvoiceId: data.xenditInvoiceId,
+        }),
+        ...(data.xenditInvoiceUrl !== undefined && {
+          xenditInvoiceUrl: data.xenditInvoiceUrl,
+        }),
+        ...(data.xenditInvoiceExpiresAt !== undefined && {
+          xenditInvoiceExpiresAt: data.xenditInvoiceExpiresAt,
         }),
         ...(data.paymentProof !== undefined && {
           paymentProof: data.paymentProof,
@@ -198,6 +206,8 @@ export class PrismaOrderRepository implements IOrderRepository {
       finalAmount: Prisma.Decimal;
       status: string;
       xenditInvoiceId: string | null;
+      xenditInvoiceUrl: string | null;
+      xenditInvoiceExpiresAt: Date | null;
       paymentProof: string | null;
       deliveredAt: Date | null;
       deliveredById: string | null;
@@ -214,6 +224,8 @@ export class PrismaOrderRepository implements IOrderRepository {
       finalAmount: Number(o.finalAmount),
       status: o.status as OrderEntity['status'],
       xenditInvoiceId: o.xenditInvoiceId,
+      xenditInvoiceUrl: o.xenditInvoiceUrl,
+      xenditInvoiceExpiresAt: o.xenditInvoiceExpiresAt,
       paymentProof: o.paymentProof,
       deliveredAt: o.deliveredAt,
       deliveredById: o.deliveredById,

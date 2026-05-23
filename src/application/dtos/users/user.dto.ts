@@ -1,0 +1,21 @@
+export interface UserResponseDto {
+  id: string;
+  email: string;
+  name: string | null;
+  role: 'ADMIN' | 'BUYER';
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ListUsersInputDto {
+  skip?: number;
+  take?: number;
+}
+
+export interface UpdateUserInputDto {
+  id: string;
+  name?: string | null;
+  role?: 'ADMIN' | 'BUYER';
+  isActive?: boolean;
+}

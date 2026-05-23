@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -18,6 +20,8 @@ import { Roles, CurrentUser } from '../../common/decorators';
 import {
   CreateProductUseCase,
   CreateProductVariantUseCase,
+  DeactivateProductUseCase,
+  GetProductDetailUseCase,
   ListProductsUseCase,
   UpdateProductUseCase,
 } from '../../application/use-cases';
@@ -38,6 +42,8 @@ export class ProductsController {
     private readonly updateProductUseCase: UpdateProductUseCase,
     private readonly createProductVariantUseCase: CreateProductVariantUseCase,
     private readonly listProductsUseCase: ListProductsUseCase,
+    private readonly getProductDetailUseCase: GetProductDetailUseCase,
+    private readonly deactivateProductUseCase: DeactivateProductUseCase,
   ) {}
 
   /** List active products with optional pagination and category filtering. */
@@ -46,6 +52,14 @@ export class ProductsController {
   @ApiResponse({ status: 200, description: 'Products retrieved.' })
   async listProducts(@Query() query: ListProductsQueryDto) {
     return this.listProductsUseCase.execute(query);
+  }
+
+  /** Retrieve product detail by id. */
+  @Get(':id')
+  @ApiOperation({ summary: 'Get product detail' })
+  @ApiResponse({ status: 200, description: 'Product retrieved.' })
+  async getProductDetail(@Param('id') id: string) {
+    return this.getProductDetailUseCase.execute(id);
   }
 
   /** Create a digital product as an admin. */
@@ -77,6 +91,18 @@ export class ProductsController {
     @Body() body: UpdateProductRequestDto,
   ) {
     return this.updateProductUseCase.execute({ id, ...body });
+  }
+
+  /** Deactivate a digital product as a safe delete operation. */
+  @Delete(':id')
+  @HttpCode(204)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Deactivate product' })
+  @ApiResponse({ status: 204, description: 'Product deactivated.' })
+  async deactivateProduct(@Param('id') id: string): Promise<void> {
+    await this.deactivateProductUseCase.execute(id);
   }
 
   /** Create a variant for a product configured with variants. */

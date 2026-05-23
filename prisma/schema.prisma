@@ -134,6 +134,8 @@ model Order {
 
   status           OrderStatus @default(PENDING)
   xenditInvoiceId  String?
+  xenditInvoiceUrl String?
+  xenditInvoiceExpiresAt DateTime?
   paymentProof     String?
 
   deliveredAt   DateTime?

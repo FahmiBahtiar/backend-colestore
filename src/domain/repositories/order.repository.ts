@@ -14,6 +14,8 @@ export interface OrderEntity {
     | 'CANCELLED'
     | 'REFUNDED';
   xenditInvoiceId: string | null;
+  xenditInvoiceUrl: string | null;
+  xenditInvoiceExpiresAt: Date | null;
   paymentProof: string | null;
   deliveredAt: Date | null;
   deliveredById: string | null;

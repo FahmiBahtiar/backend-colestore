@@ -59,6 +59,7 @@ export class PlaceOrderUseCase {
 
     const pricedItems = await Promise.all(
       input.items.map(async (item) => {
+        const variantId = this.normalizeOptionalId(item.variantId);
         const productRecord = await this.productRepository.findById(
           item.productId,
         );
@@ -71,7 +72,7 @@ export class PlaceOrderUseCase {
 
         const variantRecord = await this.resolveVariantRecord(
           productRecord,
-          item.variantId ?? null,
+          variantId,
         );
         const variant = variantRecord
           ? ProductVariant.create(variantRecord)
@@ -82,7 +83,9 @@ export class PlaceOrderUseCase {
 
         return {
           productId: item.productId,
-          variantId: item.variantId ?? null,
+          variantId,
+          productName: productRecord.name,
+          variantName: variantRecord?.name ?? null,
           quantity: item.quantity,
           unitPrice,
           subtotal: unitPrice * item.quantity,
@@ -112,6 +115,8 @@ export class PlaceOrderUseCase {
       finalAmount,
       status: 'PENDING',
       xenditInvoiceId: null,
+      xenditInvoiceUrl: null,
+      xenditInvoiceExpiresAt: null,
       paymentProof: null,
       deliveredAt: null,
       deliveredById: null,
@@ -143,11 +148,18 @@ export class PlaceOrderUseCase {
     const invoice = await this.paymentGateway.createInvoice({
       orderId: createdOrder.id,
       amount: createdOrder.finalAmount,
+      items: pricedItems.map((item) => ({
+        name: this.buildInvoiceItemName(item.productName, item.variantName),
+        quantity: item.quantity,
+        price: item.unitPrice,
+      })),
     });
     const orderWithInvoice = await this.orderRepository.update(
       createdOrder.id,
       {
         xenditInvoiceId: invoice.invoiceId,
+        xenditInvoiceUrl: invoice.invoiceUrl,
+        xenditInvoiceExpiresAt: invoice.expiresAt ?? null,
       },
     );
 
@@ -168,6 +180,8 @@ export class PlaceOrderUseCase {
       finalAmount: order.finalAmount,
       status: order.status,
       xenditInvoiceId: order.xenditInvoiceId,
+      xenditInvoiceUrl: order.xenditInvoiceUrl,
+      xenditInvoiceExpiresAt: order.xenditInvoiceExpiresAt,
       paymentProof: order.paymentProof,
       deliveredAt: order.deliveredAt,
       deliveredById: order.deliveredById,
@@ -198,6 +212,18 @@ export class PlaceOrderUseCase {
       );
     }
     return variant;
+  }
+
+  private normalizeOptionalId(value?: string | null): string | null {
+    const normalized = value?.trim();
+    return normalized ? normalized : null;
+  }
+
+  private buildInvoiceItemName(
+    productName: string,
+    variantName: string | null,
+  ): string {
+    return variantName ? `${productName} - ${variantName}` : productName;
   }
 
   private resolveUnitPrice(

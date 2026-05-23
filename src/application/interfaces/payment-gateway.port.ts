@@ -2,11 +2,19 @@ export interface CreatePaymentInvoiceInput {
   orderId: string;
   amount: number;
   payerEmail?: string;
+  items?: PaymentInvoiceItem[];
+}
+
+export interface PaymentInvoiceItem {
+  name: string;
+  quantity: number;
+  price: number;
 }
 
 export interface PaymentInvoiceResult {
   invoiceId: string;
   invoiceUrl: string | null;
+  expiresAt?: Date | null;
 }
 
 export interface PaymentWebhookPayload {
