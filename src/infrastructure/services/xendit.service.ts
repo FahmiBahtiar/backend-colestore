@@ -16,6 +16,8 @@ interface XenditInvoiceResponse {
   id?: string;
   invoiceUrl?: string;
   invoice_url?: string;
+  expiryDate?: string;
+  expiry_date?: string;
 }
 
 @Injectable()
@@ -47,13 +49,17 @@ export class XenditService implements IPaymentGatewayPort {
         externalId: input.orderId,
         amount: input.amount,
         payerEmail: input.payerEmail,
-        description: `Payment for order ${input.orderId}`,
+        description: this.buildInvoiceDescription(input),
+        ...(input.items?.length && { items: input.items }),
       },
     });
 
     return {
       invoiceId: invoice.id ?? input.orderId,
       invoiceUrl: invoice.invoiceUrl ?? invoice.invoice_url ?? null,
+      expiresAt: this.parseOptionalDate(
+        invoice.expiryDate ?? invoice.expiry_date,
+      ),
     };
   }
 
@@ -100,5 +106,20 @@ export class XenditService implements IPaymentGatewayPort {
 
   private asString(value: unknown): string | null {
     return typeof value === 'string' && value.length > 0 ? value : null;
+  }
+
+  private buildInvoiceDescription(input: CreatePaymentInvoiceInput): string {
+    if (!input.items?.length) return `Payment for order ${input.orderId}`;
+
+    const itemSummary = input.items
+      .map((item) => `${item.quantity}x ${item.name}`)
+      .join(', ');
+    return `Order ${input.orderId}: ${itemSummary}`;
+  }
+
+  private parseOptionalDate(value: string | undefined): Date | null {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
   }
 }

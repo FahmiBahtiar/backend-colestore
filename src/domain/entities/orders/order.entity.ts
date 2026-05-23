@@ -17,6 +17,8 @@ export interface OrderProps {
   finalAmount: number;
   status: OrderStatus;
   xenditInvoiceId: string | null;
+  xenditInvoiceUrl: string | null;
+  xenditInvoiceExpiresAt: Date | null;
   paymentProof: string | null;
   deliveredAt: Date | null;
   deliveredById: string | null;
@@ -49,10 +51,17 @@ export class Order extends BaseEntity {
   }
 
   /** Attach payment invoice while order is pending. */
-  attachInvoice(invoiceId: string): void {
+  attachInvoice(
+    invoiceId: string,
+    invoiceUrl?: string | null,
+    expiresAt?: Date | null,
+  ): void {
     this.ensureStatus(['PENDING']);
     this.requireNonEmpty(invoiceId, 'Invoice id is required');
     this.props.xenditInvoiceId = invoiceId;
+    this.props.xenditInvoiceUrl = invoiceUrl ?? this.props.xenditInvoiceUrl;
+    this.props.xenditInvoiceExpiresAt =
+      expiresAt ?? this.props.xenditInvoiceExpiresAt;
   }
 
   /** Mark order as paid after trusted payment confirmation. */

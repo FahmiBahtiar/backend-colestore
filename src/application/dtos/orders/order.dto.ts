@@ -8,6 +8,8 @@ export interface OrderResponseDto {
   finalAmount: number;
   status: OrderStatus;
   xenditInvoiceId: string | null;
+  xenditInvoiceUrl: string | null;
+  xenditInvoiceExpiresAt: Date | null;
   paymentProof: string | null;
   deliveredAt: Date | null;
   deliveredById: string | null;
@@ -37,6 +39,11 @@ export interface PlaceOrderResultDto {
 
 export interface ListOrdersInputDto {
   userId: string;
+  skip?: number;
+  take?: number;
+}
+
+export interface ListAllOrdersInputDto {
   skip?: number;
   take?: number;
 }

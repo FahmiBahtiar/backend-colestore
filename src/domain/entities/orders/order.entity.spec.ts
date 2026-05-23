@@ -13,6 +13,8 @@ function makeOrder(overrides: Partial<OrderProps> = {}): Order {
     finalAmount: 90_000,
     status: 'PENDING',
     xenditInvoiceId: null,
+    xenditInvoiceUrl: null,
+    xenditInvoiceExpiresAt: null,
     paymentProof: null,
     deliveredAt: null,
     deliveredById: null,
