@@ -1,12 +1,9 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Order } from '../../../domain/entities';
 import { IOrderRepository } from '../../../domain/repositories';
 import { ORDER_REPOSITORY } from '../../../domain/repositories/tokens';
 import { OrderResponseDto } from '../../dtos';
+import { throwBadRequestForDomainError } from '../../errors';
 import { OrderMapper } from '../../mappers';
 
 @Injectable()
@@ -22,13 +19,18 @@ export class CancelOrderUseCase {
     if (!order) {
       throw new NotFoundException('Order not found');
     }
-    if (['DELIVERED', 'REFUNDED', 'CANCELLED'].includes(order.status)) {
-      throw new BadRequestException(
-        'Order cannot be cancelled from current status',
-      );
+
+    const orderEntity = Order.create(order);
+    try {
+      orderEntity.cancel();
+    } catch (error) {
+      throwBadRequestForDomainError(error);
     }
 
-    const cancelled = await this.orderRepository.updateStatus(id, 'CANCELLED');
+    const cancelled = await this.orderRepository.updateStatus(
+      id,
+      orderEntity.toPrimitives().status,
+    );
     return OrderMapper.toResponse(cancelled);
   }
 }

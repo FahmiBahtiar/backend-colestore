@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -35,6 +35,16 @@ describe('ProductsController (integration)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    );
     await app.init();
   });
 
@@ -79,9 +89,9 @@ describe('ProductsController (integration)', () => {
       ],
       total: 1,
     });
-    expect(listProductsUseCase.execute).toHaveBeenCalledWith({
-      skip: '0',
-      take: '10',
+    expect(listProductsUseCase.execute.mock.calls[0]?.[0]).toEqual({
+      skip: 0,
+      take: 10,
     });
   });
 });
