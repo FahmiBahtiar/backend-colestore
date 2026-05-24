@@ -67,6 +67,8 @@ export class PrismaAdminDashboardRepository implements IAdminDashboardRepository
       lowStockProducts,
       recentOrders,
       recentActivity,
+      salesByDayRows,
+      topProductRows,
     ] = await this.prisma.$transaction([
       this.prisma.order.count({ where: rangeWhere }),
       this.prisma.order.aggregate({
@@ -77,7 +79,7 @@ export class PrismaAdminDashboardRepository implements IAdminDashboardRepository
         by: ['status'],
         where: rangeWhere,
         orderBy: { status: 'asc' },
-        _count: true,
+        _count: { _all: true },
       }),
       this.prisma.user.count({ where: { role: 'BUYER' } }),
       this.prisma.product.count(),
@@ -100,39 +102,37 @@ export class PrismaAdminDashboardRepository implements IAdminDashboardRepository
         orderBy: { createdAt: 'desc' },
         take: recentActivityLimit,
       }),
+      this.prisma.$queryRaw<SalesByDayRow[]>(
+        Prisma.sql`
+          SELECT
+            DATE_TRUNC('day', o."createdAt") AS "date",
+            COUNT(*)::int AS "orders",
+            COALESCE(SUM(o."finalAmount"), 0) AS "revenue"
+          FROM "orders" o
+          WHERE o."status" IN (${Prisma.join(PAID_STATUSES)})
+            AND o."createdAt" BETWEEN ${startDate} AND ${endDate}
+          GROUP BY 1
+          ORDER BY 1
+        `,
+      ),
+      this.prisma.$queryRaw<TopProductRow[]>(
+        Prisma.sql`
+          SELECT
+            oi."productId" AS "productId",
+            p."name" AS "name",
+            SUM(oi."quantity")::int AS "quantity",
+            COALESCE(SUM(oi."subtotal"), 0) AS "revenue"
+          FROM "order_items" oi
+          JOIN "orders" o ON o."id" = oi."orderId"
+          JOIN "products" p ON p."id" = oi."productId"
+          WHERE o."status" IN (${Prisma.join(PAID_STATUSES)})
+            AND o."createdAt" BETWEEN ${startDate} AND ${endDate}
+          GROUP BY oi."productId", p."name"
+          ORDER BY "revenue" DESC
+          LIMIT ${topProductsLimit}
+        `,
+      ),
     ]);
-
-    const salesByDayRows = await this.prisma.$queryRaw<SalesByDayRow[]>(
-      Prisma.sql`
-        SELECT
-          DATE_TRUNC('day', o."createdAt") AS "date",
-          COUNT(*)::int AS "orders",
-          COALESCE(SUM(o."finalAmount"), 0) AS "revenue"
-        FROM "orders" o
-        WHERE o."status" IN (${Prisma.join(PAID_STATUSES)})
-          AND o."createdAt" BETWEEN ${startDate} AND ${endDate}
-        GROUP BY 1
-        ORDER BY 1
-      `,
-    );
-
-    const topProductRows = await this.prisma.$queryRaw<TopProductRow[]>(
-      Prisma.sql`
-        SELECT
-          oi."productId" AS "productId",
-          p."name" AS "name",
-          SUM(oi."quantity")::int AS "quantity",
-          COALESCE(SUM(oi."subtotal"), 0) AS "revenue"
-        FROM "order_items" oi
-        JOIN "orders" o ON o."id" = oi."orderId"
-        JOIN "products" p ON p."id" = oi."productId"
-        WHERE o."status" IN (${Prisma.join(PAID_STATUSES)})
-          AND o."createdAt" BETWEEN ${startDate} AND ${endDate}
-        GROUP BY oi."productId", p."name"
-        ORDER BY "revenue" DESC
-        LIMIT ${topProductsLimit}
-      `,
-    );
 
     const ordersByStatus = ORDER_STATUSES.reduce(
       (acc, status) => ({ ...acc, [status]: 0 }),
@@ -140,8 +140,13 @@ export class PrismaAdminDashboardRepository implements IAdminDashboardRepository
     );
 
     for (const row of ordersByStatusRaw) {
-      ordersByStatus[row.status] =
-        typeof row._count === 'number' ? row._count : 0;
+      const countValue =
+        typeof row._count === 'number'
+          ? row._count
+          : row._count && row._count !== true
+            ? (row._count._all ?? 0)
+            : 0;
+      ordersByStatus[row.status] = countValue;
     }
 
     return {

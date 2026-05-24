@@ -672,6 +672,8 @@ API client perlu:
 | PATCH | `/coupons/:id` | Yes | ADMIN | Update coupon. |
 | DELETE | `/coupons/:id` | Yes | ADMIN | Delete coupon. |
 | POST | `/coupons/validate` | Yes | BUYER/ADMIN | Validate coupon. |
+| GET | `/admin/dashboard` | Yes | ADMIN | Dashboard snapshot (query: `startDate`, `endDate`, `days`, `topProductsLimit`, `recentOrdersLimit`, `recentActivityLimit`, `lowStockThreshold`). |
+| GET | `/admin/activity-logs` | Yes | ADMIN | Activity logs (query: `category`, `skip`, `take`). |
 | PATCH | `/admin/orders/:id/processing` | Yes | ADMIN | Start processing. |
 | PATCH | `/admin/orders/:id/deliver` | Yes | ADMIN | Deliver order. |
 | PATCH | `/admin/orders/:id/refund` | Yes | ADMIN | Refund order. |

@@ -56,8 +56,8 @@ export class GetAdminDashboardUseCase {
       [start, end] = [end, start];
     }
 
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
+    start.setUTCHours(0, 0, 0, 0);
+    end.setUTCHours(23, 59, 59, 999);
 
     const days = Math.max(
       1,
