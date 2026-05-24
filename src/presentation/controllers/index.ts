@@ -1,4 +1,6 @@
 export { AuthController } from './auth.controller';
+export { ActivityLogsController } from './activity-logs.controller';
+export { AdminDashboardController } from './admin-dashboard.controller';
 export { CategoriesController } from './categories.controller';
 export { CouponsController } from './coupons.controller';
 export { FulfillmentController } from './fulfillment.controller';

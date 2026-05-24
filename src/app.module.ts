@@ -6,8 +6,6 @@ import { PrismaModule } from './infrastructure/prisma';
 import { ApplicationModule } from './application/application.module';
 import { PresentationModule } from './presentation';
 import { ActivityLogService } from './application/services';
-import { ACTIVITY_LOG_REPOSITORY } from './domain/repositories/tokens';
-import { PrismaActivityLogRepository } from './infrastructure/repositories';
 import { GlobalExceptionFilter } from './presentation/filters';
 import {
   ActivityLogInterceptor,
@@ -64,10 +62,6 @@ import { AppService } from './app.service';
   providers: [
     AppService,
     ActivityLogService,
-    {
-      provide: ACTIVITY_LOG_REPOSITORY,
-      useClass: PrismaActivityLogRepository,
-    },
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,

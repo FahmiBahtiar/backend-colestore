@@ -82,6 +82,7 @@ async function bootstrap(): Promise<void> {
       .addTag('orders', 'Order management')
       .addTag('coupons', 'Coupon management')
       .addTag('admin', 'Admin dashboard')
+      .addTag('activity-logs', 'Audit log endpoints')
       .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);

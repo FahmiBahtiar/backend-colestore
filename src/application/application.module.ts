@@ -2,6 +2,8 @@ import { forwardRef, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
 import {
+  ACTIVITY_LOG_REPOSITORY,
+  ADMIN_DASHBOARD_REPOSITORY,
   CATEGORY_REPOSITORY,
   COUPON_REPOSITORY,
   ORDER_ITEM_REPOSITORY,
@@ -12,6 +14,8 @@ import {
 } from '../domain/repositories/tokens';
 import { InfrastructureModule } from '../infrastructure';
 import {
+  PrismaActivityLogRepository,
+  PrismaAdminDashboardRepository,
   PrismaCategoryRepository,
   PrismaCouponRepository,
   PrismaOrderItemRepository,
@@ -21,6 +25,8 @@ import {
   PrismaUserRepository,
 } from '../infrastructure/repositories';
 import {
+  GetActivityLogsUseCase,
+  GetAdminDashboardUseCase,
   CancelOrderUseCase,
   CreateCategoryUseCase,
   CreateCouponUseCase,
@@ -59,6 +65,11 @@ import {
 } from './use-cases';
 
 const repositoryProviders = [
+  { provide: ACTIVITY_LOG_REPOSITORY, useClass: PrismaActivityLogRepository },
+  {
+    provide: ADMIN_DASHBOARD_REPOSITORY,
+    useClass: PrismaAdminDashboardRepository,
+  },
   { provide: CATEGORY_REPOSITORY, useClass: PrismaCategoryRepository },
   { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
   { provide: PRODUCT_REPOSITORY, useClass: PrismaProductRepository },
@@ -73,6 +84,8 @@ const repositoryProviders = [
 
 const useCaseProviders = [
   TokenService,
+  GetActivityLogsUseCase,
+  GetAdminDashboardUseCase,
   RegisterUserUseCase,
   LoginUseCase,
   RefreshTokenUseCase,
