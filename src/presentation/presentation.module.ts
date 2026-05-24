@@ -3,6 +3,8 @@ import { PassportModule } from '@nestjs/passport';
 import { ApplicationModule } from '../application/application.module';
 import { InfrastructureModule } from '../infrastructure';
 import {
+  ActivityLogsController,
+  AdminDashboardController,
   AuthController,
   CategoriesController,
   CouponsController,
@@ -21,6 +23,8 @@ import { JwtStrategy } from './strategies';
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [
+    ActivityLogsController,
+    AdminDashboardController,
     AuthController,
     CategoriesController,
     UsersController,

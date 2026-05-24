@@ -1,4 +1,6 @@
 export * from './auth-requests.dto';
+export * from './activity-log-requests.dto';
+export * from './admin-dashboard-requests.dto';
 export * from './category-requests.dto';
 export * from './coupon-requests.dto';
 export * from './fulfillment-requests.dto';

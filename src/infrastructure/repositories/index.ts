@@ -4,6 +4,7 @@ export { PrismaOrderRepository } from './prisma-order.repository';
 export { PrismaCouponRepository } from './prisma-coupon.repository';
 export { PrismaCategoryRepository } from './prisma-category.repository';
 export { PrismaActivityLogRepository } from './prisma-activity-log.repository';
+export { PrismaAdminDashboardRepository } from './prisma-admin-dashboard.repository';
 export {
   PrismaProductVariantRepository,
   IProductVariantRepository,
