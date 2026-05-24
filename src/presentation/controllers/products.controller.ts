@@ -22,6 +22,7 @@ import {
   CreateProductVariantUseCase,
   DeactivateProductUseCase,
   GetProductDetailUseCase,
+  GetProductVariantsUseCase,
   ListProductsUseCase,
   UpdateProductUseCase,
 } from '../../application/use-cases';
@@ -43,6 +44,7 @@ export class ProductsController {
     private readonly createProductVariantUseCase: CreateProductVariantUseCase,
     private readonly listProductsUseCase: ListProductsUseCase,
     private readonly getProductDetailUseCase: GetProductDetailUseCase,
+    private readonly getProductVariantsUseCase: GetProductVariantsUseCase,
     private readonly deactivateProductUseCase: DeactivateProductUseCase,
   ) {}
 
@@ -117,5 +119,13 @@ export class ProductsController {
     @Body() body: CreateProductVariantRequestDto,
   ) {
     return this.createProductVariantUseCase.execute({ productId, ...body });
+  }
+
+  /** Get all variants for a product. */
+  @Get(':id/variants')
+  @ApiOperation({ summary: 'Get product variants' })
+  @ApiResponse({ status: 200, description: 'Product variants retrieved.' })
+  async getProductVariants(@Param('id') id: string) {
+    return this.getProductVariantsUseCase.execute(id);
   }
 }

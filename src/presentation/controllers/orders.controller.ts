@@ -25,12 +25,10 @@ import {
 import { CurrentUser, Roles } from '../../common/decorators';
 import { AuthenticatedUser } from '../auth/authenticated-user';
 import { ListOrdersQueryDto, PlaceOrderRequestDto } from '../dtos';
-import { JwtAuthGuard, RolesGuard } from '../guards';
+import { JwtAuthGuard, RolesGuard, OptionalJwtAuthGuard } from '../guards';
 
 @ApiTags('orders')
 @Controller('orders')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@ApiBearerAuth('JWT-auth')
 export class OrdersController {
   constructor(
     private readonly placeOrderUseCase: PlaceOrderUseCase,
@@ -40,24 +38,29 @@ export class OrdersController {
     private readonly cancelOrderUseCase: CancelOrderUseCase,
   ) {}
 
-  /** Place an order for the current buyer. */
+  /** Place an order for the current buyer (supports guest checkout). */
   @Post()
-  @Roles('BUYER')
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Place order' })
   @ApiResponse({ status: 201, description: 'Order placed.' })
   async placeOrder(
     @Body() body: PlaceOrderRequestDto,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user?: AuthenticatedUser | null,
   ) {
     return this.placeOrderUseCase.execute({
-      userId: user.id,
+      userId: user?.id ?? null,
       items: body.items,
       couponCode: body.couponCode,
+      customerEmail: body.customerEmail,
+      customerWhatsapp: body.customerWhatsapp,
     });
   }
 
   /** List orders owned by the current buyer. */
   @Get('me')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth('JWT-auth')
   @Roles('BUYER')
   @ApiOperation({ summary: 'List current user orders' })
   @ApiResponse({ status: 200, description: 'Orders retrieved.' })
@@ -70,6 +73,8 @@ export class OrdersController {
 
   /** List all orders as an admin. */
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth('JWT-auth')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'List all orders' })
   @ApiResponse({ status: 200, description: 'Orders retrieved.' })
@@ -77,9 +82,8 @@ export class OrdersController {
     return this.listOrdersUseCase.execute(query);
   }
 
-  /** Retrieve an order by id for buyer or admin views. */
+  /** Retrieve an order by id (accessible by buyers, admins, and guest users via unique CUID link). */
   @Get(':id')
-  @Roles('BUYER', 'ADMIN')
   @ApiOperation({ summary: 'Get order detail' })
   @ApiResponse({ status: 200, description: 'Order retrieved.' })
   async getOrderDetail(@Param('id') id: string) {
@@ -89,6 +93,8 @@ export class OrdersController {
   /** Cancel an order as a safe delete operation. */
   @Delete(':id')
   @HttpCode(200)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth('JWT-auth')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Cancel order' })
   @ApiResponse({ status: 200, description: 'Order cancelled.' })

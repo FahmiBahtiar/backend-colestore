@@ -18,17 +18,19 @@ import {
 export class PrismaOrderRepository implements IOrderRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  private static readonly orderInclude = {
+    items: {
+      include: { product: true, variant: true, checkoutAnswers: true },
+    },
+    user: { select: { id: true, email: true, name: true } },
+    coupon: true,
+  } satisfies Prisma.OrderInclude;
+
   /** Find an order by ID with relations */
   async findById(id: string): Promise<OrderEntity | null> {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: {
-        items: {
-          include: { product: true, variant: true },
-        },
-        user: { select: { id: true, email: true, name: true } },
-        coupon: true,
-      },
+      include: PrismaOrderRepository.orderInclude,
     });
     return order ? this.toEntity(order) : null;
   }
@@ -45,10 +47,7 @@ export class PrismaOrderRepository implements IOrderRepository {
       this.prisma.order.findMany({
         skip,
         take,
-        include: {
-          items: { include: { product: true, variant: true } },
-          user: { select: { id: true, email: true, name: true } },
-        },
+        include: PrismaOrderRepository.orderInclude,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.order.count(),
@@ -78,7 +77,9 @@ export class PrismaOrderRepository implements IOrderRepository {
         skip,
         take,
         include: {
-          items: { include: { product: true, variant: true } },
+          items: {
+            include: { product: true, variant: true, checkoutAnswers: true },
+          },
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -96,7 +97,9 @@ export class PrismaOrderRepository implements IOrderRepository {
     const order = await this.prisma.order.findFirst({
       where: { xenditInvoiceId: invoiceId },
       include: {
-        items: { include: { product: true, variant: true } },
+        items: {
+          include: { product: true, variant: true, checkoutAnswers: true },
+        },
         user: { select: { id: true, email: true, name: true } },
       },
     });
@@ -117,7 +120,9 @@ export class PrismaOrderRepository implements IOrderRepository {
       where: { id },
       data: { status },
       include: {
-        items: { include: { product: true, variant: true } },
+        items: {
+          include: { product: true, variant: true, checkoutAnswers: true },
+        },
         user: { select: { id: true, email: true, name: true } },
       },
     });
@@ -128,7 +133,9 @@ export class PrismaOrderRepository implements IOrderRepository {
   async create(data: Partial<OrderEntity>): Promise<OrderEntity> {
     const order = await this.prisma.order.create({
       data: {
-        userId: data.userId!,
+        userId: data.userId ?? null,
+        customerEmail: data.customerEmail ?? '',
+        customerWhatsapp: data.customerWhatsapp ?? '',
         totalAmount: new Prisma.Decimal(data.totalAmount ?? 0),
         discountAmount: new Prisma.Decimal(data.discountAmount ?? 0),
         finalAmount: new Prisma.Decimal(data.finalAmount ?? 0),
@@ -139,7 +146,9 @@ export class PrismaOrderRepository implements IOrderRepository {
         couponId: data.couponId,
       },
       include: {
-        items: { include: { product: true, variant: true } },
+        items: {
+          include: { product: true, variant: true, checkoutAnswers: true },
+        },
         user: { select: { id: true, email: true, name: true } },
       },
     });
@@ -180,7 +189,9 @@ export class PrismaOrderRepository implements IOrderRepository {
         }),
       },
       include: {
-        items: { include: { product: true, variant: true } },
+        items: {
+          include: { product: true, variant: true, checkoutAnswers: true },
+        },
         user: { select: { id: true, email: true, name: true } },
       },
     });
@@ -200,7 +211,9 @@ export class PrismaOrderRepository implements IOrderRepository {
   private toEntity(order: Record<string, unknown>): OrderEntity {
     const o = order as {
       id: string;
-      userId: string;
+      userId: string | null;
+      customerEmail: string;
+      customerWhatsapp: string;
       totalAmount: Prisma.Decimal;
       discountAmount: Prisma.Decimal;
       finalAmount: Prisma.Decimal;
@@ -215,10 +228,16 @@ export class PrismaOrderRepository implements IOrderRepository {
       couponId: string | null;
       createdAt: Date;
       updatedAt: Date;
+      items?: (NonNullable<OrderEntity['items']>[number] & {
+        product?: { name: string } | null;
+        variant?: { name: string } | null;
+      })[];
     };
     return {
       id: o.id,
       userId: o.userId,
+      customerEmail: o.customerEmail ?? '',
+      customerWhatsapp: o.customerWhatsapp ?? '',
       totalAmount: Number(o.totalAmount),
       discountAmount: Number(o.discountAmount),
       finalAmount: Number(o.finalAmount),
@@ -233,6 +252,31 @@ export class PrismaOrderRepository implements IOrderRepository {
       couponId: o.couponId,
       createdAt: o.createdAt,
       updatedAt: o.updatedAt,
+      items: o.items
+        ? o.items.map((item) => ({
+            id: item.id,
+            orderId: item.orderId,
+            productId: item.productId,
+            variantId: item.variantId,
+            couponId: item.couponId,
+            quantity: item.quantity,
+            unitPrice: Number(item.unitPrice),
+            subtotal: Number(item.subtotal),
+            productName: item.product?.name ?? null,
+            variantName: item.variant?.name ?? null,
+            checkoutAnswers: item.checkoutAnswers
+              ? item.checkoutAnswers.map((ans) => ({
+                  id: ans.id,
+                  orderItemId: ans.orderItemId,
+                  checkoutFieldId: ans.checkoutFieldId,
+                  label: ans.label,
+                  value: ans.value,
+                  createdAt: ans.createdAt,
+                  updatedAt: ans.updatedAt,
+                }))
+              : [],
+          }))
+        : undefined,
     };
   }
 }

@@ -14,6 +14,24 @@ export interface ProductEntity {
   createdById: string;
   createdAt: Date;
   updatedAt: Date;
+  variants?: {
+    id: string;
+    name: string;
+    price: number | null;
+    stockQuantity: number | null;
+    productId: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }[];
+  checkoutFields?: {
+    id: string;
+    productId: string;
+    label: string;
+    type: string;
+    isRequired: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }[];
 }
 
 /**
@@ -25,5 +43,7 @@ export interface IProductRepository extends IBaseRepository<ProductEntity> {
     skip?: number;
     take?: number;
     categoryId?: string;
+    search?: string;
+    includeInactive?: boolean;
   }): Promise<{ items: ProductEntity[]; total: number }>;
 }

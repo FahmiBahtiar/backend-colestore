@@ -33,7 +33,7 @@ export interface TopProductDto {
 
 export interface RecentOrderDto {
   id: string;
-  userId: string;
+  userId: string | null;
   userEmail: string | null;
   userName: string | null;
   status: OrderStatus;

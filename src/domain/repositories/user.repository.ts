@@ -7,6 +7,7 @@ export interface UserEntity {
   name: string | null;
   role: 'ADMIN' | 'BUYER';
   isActive: boolean;
+  totalPoints?: number;
   createdAt: Date;
   updatedAt: Date;
 }

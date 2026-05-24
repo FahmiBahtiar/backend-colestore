@@ -15,3 +15,5 @@ export {
   IOrderItemRepository,
   OrderItemEntity,
 } from './prisma-order-item.repository';
+export { PrismaPointTransactionRepository } from './prisma-point-transaction.repository';
+export { PrismaPointRewardRepository } from './prisma-point-reward.repository';

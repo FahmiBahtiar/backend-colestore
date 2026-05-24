@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsInt,
@@ -8,7 +9,31 @@ import {
   IsString,
   Min,
   MinLength,
+  ValidateNested,
+  IsArray,
+  IsIn,
 } from 'class-validator';
+
+export class ProductCheckoutFieldRequestDto {
+  @ApiPropertyOptional({ example: 'clwfield123' })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @ApiProperty({ example: 'ID Game' })
+  @IsString()
+  @MinLength(1)
+  label: string;
+
+  @ApiProperty({ example: 'TEXT' })
+  @IsString()
+  @IsIn(['TEXT', 'TEXTAREA'])
+  type: string;
+
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  isRequired: boolean;
+}
 
 export class CreateProductRequestDto {
   @ApiProperty({ example: 'Premium Icon Pack' })
@@ -51,6 +76,13 @@ export class CreateProductRequestDto {
   @IsOptional()
   @IsString()
   categoryId?: string | null;
+
+  @ApiPropertyOptional({ type: [ProductCheckoutFieldRequestDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductCheckoutFieldRequestDto)
+  checkoutFields?: ProductCheckoutFieldRequestDto[];
 }
 
 export class UpdateProductRequestDto {
@@ -91,6 +123,13 @@ export class UpdateProductRequestDto {
   @IsOptional()
   @IsString()
   categoryId?: string | null;
+
+  @ApiPropertyOptional({ type: [ProductCheckoutFieldRequestDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductCheckoutFieldRequestDto)
+  checkoutFields?: ProductCheckoutFieldRequestDto[];
 }
 
 export class CreateProductVariantRequestDto {
@@ -129,4 +168,14 @@ export class ListProductsQueryDto {
   @IsOptional()
   @IsString()
   categoryId?: string;
+
+  @ApiPropertyOptional({ example: 'mobile legends' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  includeInactive?: boolean;
 }

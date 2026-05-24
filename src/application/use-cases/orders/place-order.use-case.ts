@@ -7,6 +7,7 @@ import {
 import {
   Coupon,
   Order,
+  OrderProps,
   Product,
   ProductVariant,
 } from '../../../domain/entities';
@@ -70,6 +71,28 @@ export class PlaceOrderUseCase {
         const product = Product.create(productRecord);
         product.ensurePurchasable();
 
+        // Relational dynamic custom fields validation
+        const configuredFields = productRecord.checkoutFields || [];
+        const answers = item.checkoutAnswers || [];
+
+        for (const config of configuredFields) {
+          if (config.isRequired) {
+            const givenAnswer = answers.find(
+              (ans) =>
+                ans.checkoutFieldId === config.id || ans.label === config.label,
+            );
+            if (
+              !givenAnswer ||
+              !givenAnswer.value ||
+              !givenAnswer.value.trim()
+            ) {
+              throw new BadRequestException(
+                `Field '${config.label}' is required for product '${productRecord.name}'`,
+              );
+            }
+          }
+        }
+
         const variantRecord = await this.resolveVariantRecord(
           productRecord,
           variantId,
@@ -89,6 +112,16 @@ export class PlaceOrderUseCase {
           quantity: item.quantity,
           unitPrice,
           subtotal: unitPrice * item.quantity,
+          checkoutAnswers: answers.map((ans) => {
+            const config = configuredFields.find(
+              (cf) => cf.id === ans.checkoutFieldId || cf.label === ans.label,
+            );
+            return {
+              checkoutFieldId: config?.id ?? null,
+              label: ans.label,
+              value: ans.value,
+            };
+          }),
         };
       }),
     );
@@ -109,7 +142,9 @@ export class PlaceOrderUseCase {
 
     const order = Order.create({
       id: 'new-order',
-      userId: input.userId,
+      userId: input.userId ?? null,
+      customerEmail: input.customerEmail,
+      customerWhatsapp: input.customerWhatsapp,
       totalAmount,
       discountAmount,
       finalAmount,
@@ -138,6 +173,7 @@ export class PlaceOrderUseCase {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         subtotal: item.subtotal,
+        checkoutAnswers: item.checkoutAnswers,
       })),
     );
     if (couponRecord) {
@@ -171,10 +207,12 @@ export class PlaceOrderUseCase {
   }
 
   private toCreateData(
-    order: OrderEntity,
+    order: OrderProps,
   ): Omit<OrderEntity, 'id' | 'createdAt' | 'updatedAt'> {
     return {
       userId: order.userId,
+      customerEmail: order.customerEmail,
+      customerWhatsapp: order.customerWhatsapp,
       totalAmount: order.totalAmount,
       discountAmount: order.discountAmount,
       finalAmount: order.finalAmount,

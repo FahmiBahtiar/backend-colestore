@@ -8,6 +8,8 @@ function makeOrder(overrides: Partial<OrderProps> = {}): Order {
   return Order.create({
     id: 'order-1',
     userId: 'user-1',
+    customerEmail: 'customer@example.com',
+    customerWhatsapp: '081234567890',
     totalAmount: 100_000,
     discountAmount: 10_000,
     finalAmount: 90_000,

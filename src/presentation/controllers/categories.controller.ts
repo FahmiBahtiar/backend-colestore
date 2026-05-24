@@ -66,7 +66,13 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Create category' })
   @ApiResponse({ status: 201, description: 'Category created.' })
   async createCategory(@Body() body: CreateCategoryRequestDto) {
-    return this.createCategoryUseCase.execute(body);
+    const slug =
+      body.slug ||
+      body.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '');
+    return this.createCategoryUseCase.execute({ ...body, slug });
   }
 
   /** Update a category as an admin. */

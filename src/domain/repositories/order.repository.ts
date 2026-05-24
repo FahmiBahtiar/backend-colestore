@@ -2,7 +2,9 @@ import { IBaseRepository } from './base.repository';
 
 export interface OrderEntity {
   id: string;
-  userId: string;
+  userId: string | null;
+  customerEmail: string;
+  customerWhatsapp: string;
   totalAmount: number;
   discountAmount: number;
   finalAmount: number;
@@ -23,6 +25,27 @@ export interface OrderEntity {
   couponId: string | null;
   createdAt: Date;
   updatedAt: Date;
+  items?: {
+    id: string;
+    orderId: string;
+    productId: string;
+    variantId: string | null;
+    couponId: string | null;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+    productName: string | null;
+    variantName: string | null;
+    checkoutAnswers?: {
+      id: string;
+      orderItemId: string;
+      checkoutFieldId: string | null;
+      label: string;
+      value: string;
+      createdAt: Date;
+      updatedAt: Date;
+    }[];
+  }[];
 }
 
 /**

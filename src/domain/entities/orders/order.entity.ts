@@ -11,7 +11,9 @@ export type OrderStatus =
 
 export interface OrderProps {
   id: string;
-  userId: string;
+  userId: string | null;
+  customerEmail: string;
+  customerWhatsapp: string;
   totalAmount: number;
   discountAmount: number;
   finalAmount: number;
@@ -105,7 +107,17 @@ export class Order extends BaseEntity {
   }
 
   private validate(): void {
-    this.requireNonEmpty(this.props.userId, 'Order user id is required');
+    if (this.props.userId !== null) {
+      this.requireNonEmpty(this.props.userId, 'Order user id is required');
+    }
+    this.requireNonEmpty(
+      this.props.customerEmail,
+      'Customer email is required',
+    );
+    this.requireNonEmpty(
+      this.props.customerWhatsapp,
+      'Customer whatsapp is required',
+    );
     this.requireNonNegative(
       this.props.totalAmount,
       'Order total amount cannot be negative',

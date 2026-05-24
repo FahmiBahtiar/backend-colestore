@@ -15,3 +15,16 @@ export { ProductVariant } from './products/product-variant.entity';
 export type { ProductVariantProps } from './products/product-variant.entity';
 export { User } from './users/user.entity';
 export type { UserProps, UserRole } from './users/user.entity';
+export {
+  PointTransaction,
+  POINTS_PER_UNIT,
+} from './points/point-transaction.entity';
+export type {
+  PointTransactionProps,
+  PointTransactionType,
+} from './points/point-transaction.entity';
+export { PointReward } from './points/point-reward.entity';
+export type {
+  PointRewardProps,
+  RewardDiscountType,
+} from './points/point-reward.entity';
