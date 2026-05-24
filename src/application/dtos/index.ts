@@ -7,3 +7,4 @@ export type * from './orders';
 export type * from './payments';
 export type * from './products';
 export type * from './users';
+export type * from './points';

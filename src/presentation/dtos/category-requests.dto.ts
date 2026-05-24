@@ -7,10 +7,11 @@ export class CreateCategoryRequestDto {
   @MinLength(2)
   name: string;
 
-  @ApiProperty({ example: 'design-assets' })
+  @ApiPropertyOptional({ example: 'design-assets' })
+  @IsOptional()
   @IsString()
   @MinLength(2)
-  slug: string;
+  slug?: string;
 }
 
 export class UpdateCategoryRequestDto {

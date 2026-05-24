@@ -11,6 +11,8 @@ import {
   PRODUCT_REPOSITORY,
   PRODUCT_VARIANT_REPOSITORY,
   USER_REPOSITORY,
+  POINT_TRANSACTION_REPOSITORY,
+  POINT_REWARD_REPOSITORY,
 } from '../domain/repositories/tokens';
 import { InfrastructureModule } from '../infrastructure';
 import {
@@ -23,6 +25,8 @@ import {
   PrismaProductRepository,
   PrismaProductVariantRepository,
   PrismaUserRepository,
+  PrismaPointTransactionRepository,
+  PrismaPointRewardRepository,
 } from '../infrastructure/repositories';
 import {
   GetActivityLogsUseCase,
@@ -41,6 +45,7 @@ import {
   GetCouponDetailUseCase,
   GetOrderDetailUseCase,
   GetProductDetailUseCase,
+  GetProductVariantsUseCase,
   GetUserDetailUseCase,
   GetUserOrdersUseCase,
   ListCategoriesUseCase,
@@ -62,6 +67,14 @@ import {
   UpdateProductUseCase,
   UpdateUserUseCase,
   ValidateCouponUseCase,
+  GetUserPointsUseCase,
+  AwardOrderPointsUseCase,
+  RevokeOrderPointsUseCase,
+  RedeemPointRewardUseCase,
+  CreatePointRewardUseCase,
+  ListPointRewardsUseCase,
+  UpdatePointRewardUseCase,
+  DeletePointRewardUseCase,
 } from './use-cases';
 
 const repositoryProviders = [
@@ -80,6 +93,14 @@ const repositoryProviders = [
   { provide: COUPON_REPOSITORY, useClass: PrismaCouponRepository },
   { provide: ORDER_REPOSITORY, useClass: PrismaOrderRepository },
   { provide: ORDER_ITEM_REPOSITORY, useClass: PrismaOrderItemRepository },
+  {
+    provide: POINT_TRANSACTION_REPOSITORY,
+    useClass: PrismaPointTransactionRepository,
+  },
+  {
+    provide: POINT_REWARD_REPOSITORY,
+    useClass: PrismaPointRewardRepository,
+  },
 ];
 
 const useCaseProviders = [
@@ -103,6 +124,7 @@ const useCaseProviders = [
   GetProductDetailUseCase,
   DeactivateProductUseCase,
   CreateProductVariantUseCase,
+  GetProductVariantsUseCase,
   ListProductsUseCase,
   CreateCouponUseCase,
   ListCouponsUseCase,
@@ -120,6 +142,14 @@ const useCaseProviders = [
   StartOrderProcessingUseCase,
   DeliverOrderUseCase,
   RefundOrderUseCase,
+  GetUserPointsUseCase,
+  AwardOrderPointsUseCase,
+  RevokeOrderPointsUseCase,
+  RedeemPointRewardUseCase,
+  CreatePointRewardUseCase,
+  ListPointRewardsUseCase,
+  UpdatePointRewardUseCase,
+  DeletePointRewardUseCase,
 ];
 
 @Module({

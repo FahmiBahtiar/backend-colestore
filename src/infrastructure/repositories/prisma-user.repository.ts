@@ -20,13 +20,19 @@ export class PrismaUserRepository implements IUserRepository {
 
   /** Find a user by ID */
   async findById(id: string): Promise<UserEntity | null> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: { pointTransactions: true },
+    });
     return user ? this.toEntity(user) : null;
   }
 
   /** Find a user by email address */
   async findByEmail(email: string): Promise<UserEntity | null> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { pointTransactions: true },
+    });
     return user ? this.toEntity(user) : null;
   }
 
@@ -42,6 +48,7 @@ export class PrismaUserRepository implements IUserRepository {
       this.prisma.user.findMany({
         skip,
         take,
+        include: { pointTransactions: true },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.user.count(),
@@ -70,6 +77,7 @@ export class PrismaUserRepository implements IUserRepository {
         where,
         skip,
         take,
+        include: { pointTransactions: true },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.user.count({ where }),
@@ -134,7 +142,18 @@ export class PrismaUserRepository implements IUserRepository {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    pointTransactions?: { type: string; points: number }[];
   }): UserEntity {
+    let totalPoints = undefined;
+    if (user.pointTransactions) {
+      const earned = user.pointTransactions
+        .filter((p) => p.type === 'EARNED')
+        .reduce((sum, p) => sum + p.points, 0);
+      const spent = user.pointTransactions
+        .filter((p) => p.type === 'REFUNDED' || p.type === 'REDEEMED')
+        .reduce((sum, p) => sum + p.points, 0);
+      totalPoints = Math.max(0, earned - spent);
+    }
     return {
       id: user.id,
       email: user.email,
@@ -142,6 +161,7 @@ export class PrismaUserRepository implements IUserRepository {
       name: user.name,
       role: user.role as UserEntity['role'],
       isActive: user.isActive,
+      totalPoints,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

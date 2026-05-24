@@ -33,6 +33,15 @@ export class UpdateProductUseCase {
         stockQuantity: input.stockQuantity ?? existing.stockQuantity,
         digitalFileKey: input.digitalFileKey ?? existing.digitalFileKey,
         categoryId: input.categoryId ?? existing.categoryId,
+        checkoutFields: input.checkoutFields
+          ? input.checkoutFields.map((f) => ({
+              id: f.id ?? 'new-field',
+              productId: input.id,
+              label: f.label,
+              type: f.type,
+              isRequired: f.isRequired,
+            }))
+          : existing.checkoutFields,
       });
     } catch (error) {
       throwBadRequestForDomainError(error);
@@ -61,6 +70,17 @@ export class UpdateProductUseCase {
         digitalFileKey: input.digitalFileKey,
       }),
       ...(input.categoryId !== undefined && { categoryId: input.categoryId }),
+      ...(input.checkoutFields !== undefined && {
+        checkoutFields: input.checkoutFields.map((f) => ({
+          id: f.id ?? 'new-field',
+          productId: input.id,
+          label: f.label,
+          type: f.type,
+          isRequired: f.isRequired,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })),
+      }),
     };
   }
 }

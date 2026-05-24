@@ -2,7 +2,9 @@ import { OrderStatus } from '../../../domain/entities';
 
 export interface OrderResponseDto {
   id: string;
-  userId: string;
+  userId: string | null;
+  customerEmail: string;
+  customerWhatsapp: string;
   totalAmount: number;
   discountAmount: number;
   finalAmount: number;
@@ -19,16 +21,25 @@ export interface OrderResponseDto {
   updatedAt: Date;
 }
 
+export interface OrderItemCheckoutAnswerInputDto {
+  checkoutFieldId?: string | null;
+  label: string;
+  value: string;
+}
+
 export interface OrderItemInputDto {
   productId: string;
   variantId?: string | null;
   quantity: number;
+  checkoutAnswers?: OrderItemCheckoutAnswerInputDto[];
 }
 
 export interface PlaceOrderInputDto {
-  userId: string;
+  userId?: string | null;
   items: OrderItemInputDto[];
   couponCode?: string | null;
+  customerEmail: string;
+  customerWhatsapp: string;
 }
 
 export interface PlaceOrderResultDto {

@@ -1,5 +1,5 @@
 export { IBaseRepository } from './base.repository';
-export { ACTIVITY_LOG_REPOSITORY } from './tokens';
+export * from './tokens';
 export {
   IAdminDashboardRepository,
   AdminDashboardSnapshot,
@@ -13,3 +13,11 @@ export {
   ActivityLogEntity,
 } from './activity-log.repository';
 export { ICategoryRepository, CategoryEntity } from './category.repository';
+export {
+  IPointTransactionRepository,
+  PointTransactionEntity,
+} from './point-transaction.repository';
+export {
+  IPointRewardRepository,
+  PointRewardEntity,
+} from './point-reward.repository';

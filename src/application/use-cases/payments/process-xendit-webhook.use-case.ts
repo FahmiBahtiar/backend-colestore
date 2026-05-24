@@ -7,6 +7,7 @@ import {
   ProcessXenditWebhookResultDto,
 } from '../../dtos';
 import { IPaymentGatewayPort, PAYMENT_GATEWAY } from '../../interfaces';
+import { AwardOrderPointsUseCase } from '../points/award-order-points.use-case';
 
 @Injectable()
 export class ProcessXenditWebhookUseCase {
@@ -15,6 +16,7 @@ export class ProcessXenditWebhookUseCase {
     private readonly orderRepository: IOrderRepository,
     @Inject(PAYMENT_GATEWAY)
     private readonly paymentGateway: IPaymentGatewayPort,
+    private readonly awardOrderPointsUseCase: AwardOrderPointsUseCase,
   ) {}
 
   /** Process a trusted Xendit webhook payload and update order payment status. */
@@ -42,6 +44,10 @@ export class ProcessXenditWebhookUseCase {
       status: order.toPrimitives().status,
       paymentProof: order.toPrimitives().paymentProof,
     });
+
+    if (webhook.status === 'PAID') {
+      await this.awardOrderPointsUseCase.execute(updated);
+    }
 
     return { orderId: updated.id, status: updated.status, processed: true };
   }

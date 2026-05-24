@@ -40,7 +40,7 @@ export interface AdminDashboardSnapshot {
   }[];
   recentOrders: {
     id: string;
-    userId: string;
+    userId: string | null;
     userEmail: string | null;
     userName: string | null;
     status: OrderStatus;

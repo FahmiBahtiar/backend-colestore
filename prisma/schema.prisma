@@ -20,10 +20,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orders          Order[]
-  activityLogs    ActivityLog[]    @relation("ActorLogs")
-  createdProducts Product[]        @relation("CreatedByAdmin")
-  deliveredOrders Order[]          @relation("DeliveredBy")
+  orders            Order[]
+  activityLogs      ActivityLog[]      @relation("ActorLogs")
+  createdProducts   Product[]          @relation("CreatedByAdmin")
+  deliveredOrders   Order[]            @relation("DeliveredBy")
+  pointTransactions PointTransaction[]
 
   @@map("users")
 }
@@ -66,6 +67,7 @@ model Product {
 
   variants   ProductVariant[]
   orderItems OrderItem[]
+  checkoutFields ProductCheckoutField[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -124,9 +126,11 @@ enum DiscountType {
 // ============================================================
 
 model Order {
-  id             String      @id @default(cuid())
-  userId         String
-  user           User        @relation(fields: [userId], references: [id])
+  id               String      @id @default(cuid())
+  userId           String?
+  user             User?       @relation(fields: [userId], references: [id])
+  customerEmail    String      @default("")
+  customerWhatsapp String      @default("")
 
   totalAmount    Decimal
   discountAmount Decimal     @default(0)
@@ -146,8 +150,9 @@ model Order {
   couponId String?
   coupon   Coupon? @relation(fields: [couponId], references: [id])
 
-  items        OrderItem[]
-  activityLogs ActivityLog[] @relation("OrderLogs")
+  items             OrderItem[]
+  activityLogs      ActivityLog[] @relation("OrderLogs")
+  pointTransactions PointTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -182,7 +187,38 @@ model OrderItem {
   unitPrice Decimal
   subtotal  Decimal
 
+  checkoutAnswers OrderItemCheckoutAnswer[]
+
   @@map("order_items")
+}
+
+model ProductCheckoutField {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label      String
+  type       String   @default("TEXT") // TEXT, TEXTAREA
+  isRequired Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  answers    OrderItemCheckoutAnswer[]
+
+  @@map("product_checkout_fields")
+}
+
+model OrderItemCheckoutAnswer {
+  id              String                @id @default(cuid())
+  orderItemId     String
+  orderItem       OrderItem             @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  checkoutFieldId String?
+  checkoutField   ProductCheckoutField? @relation(fields: [checkoutFieldId], references: [id], onDelete: SetNull)
+  label           String                // Snapshot of the field label at purchase time
+  value           String                // Buyer response/answer value
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@map("order_item_checkout_answers")
 }
 
 // ============================================================
@@ -222,4 +258,49 @@ enum LogCategory {
   COUPON
   SYSTEM
   SECURITY
+}
+
+// ============================================================
+// LOYALTY POINTS
+// ============================================================
+
+enum PointTransactionType {
+  EARNED
+  REFUNDED
+  REDEEMED
+}
+
+model PointTransaction {
+  id        String               @id @default(cuid())
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id])
+  orderId   String?
+  order     Order?               @relation(fields: [orderId], references: [id])
+  type      PointTransactionType
+  points    Int
+  amount    Decimal              @default(0)
+  createdAt DateTime             @default(now())
+
+  @@index([userId])
+  @@index([orderId])
+  @@map("point_transactions")
+}
+
+model PointReward {
+  id             String       @id @default(cuid())
+  name           String
+  description    String?
+  pointCost      Int
+  discountType   DiscountType
+  discountValue  Decimal
+  minOrderAmount Decimal      @default(0)
+  maxRedemptions Int?
+  redeemedCount  Int          @default(0)
+  isActive       Boolean      @default(true)
+  expiresAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("point_rewards")
 }

@@ -10,6 +10,7 @@ export class UserMapper {
       name: user.name,
       role: user.role,
       isActive: user.isActive,
+      totalPoints: user.totalPoints,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

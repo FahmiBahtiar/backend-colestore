@@ -4,12 +4,14 @@ import { IOrderRepository } from '../../../domain/repositories';
 import { ORDER_REPOSITORY } from '../../../domain/repositories/tokens';
 import { OrderActionInputDto, OrderResponseDto } from '../../dtos';
 import { OrderMapper } from '../../mappers';
+import { RevokeOrderPointsUseCase } from '../points/revoke-order-points.use-case';
 
 @Injectable()
 export class RefundOrderUseCase {
   constructor(
     @Inject(ORDER_REPOSITORY)
     private readonly orderRepository: IOrderRepository,
+    private readonly revokeOrderPointsUseCase: RevokeOrderPointsUseCase,
   ) {}
 
   /** Mark a paid, processing, or delivered order as refunded. */
@@ -22,6 +24,8 @@ export class RefundOrderUseCase {
     const updated = await this.orderRepository.update(input.orderId, {
       status: order.toPrimitives().status,
     });
+
+    await this.revokeOrderPointsUseCase.execute(updated);
 
     return OrderMapper.toResponse(updated);
   }

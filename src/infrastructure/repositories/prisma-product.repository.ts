@@ -18,11 +18,17 @@ import {
 export class PrismaProductRepository implements IProductRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  private static readonly productInclude = {
+    category: true,
+    variants: true,
+    checkoutFields: { orderBy: { createdAt: 'asc' } },
+  } satisfies Prisma.ProductInclude;
+
   /** Find a product by ID with category and variants */
   async findById(id: string): Promise<ProductEntity | null> {
     const product = await this.prisma.product.findUnique({
       where: { id },
-      include: { category: true, variants: true },
+      include: PrismaProductRepository.productInclude,
     });
     return product ? this.toEntity(product) : null;
   }
@@ -31,7 +37,7 @@ export class PrismaProductRepository implements IProductRepository {
   async findBySlug(slug: string): Promise<ProductEntity | null> {
     const product = await this.prisma.product.findUnique({
       where: { slug },
-      include: { category: true, variants: true },
+      include: PrismaProductRepository.productInclude,
     });
     return product ? this.toEntity(product) : null;
   }
@@ -48,7 +54,7 @@ export class PrismaProductRepository implements IProductRepository {
       this.prisma.product.findMany({
         skip,
         take,
-        include: { category: true, variants: true },
+        include: PrismaProductRepository.productInclude,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.product.count(),
@@ -67,13 +73,22 @@ export class PrismaProductRepository implements IProductRepository {
     skip?: number;
     take?: number;
     categoryId?: string;
+    search?: string;
+    includeInactive?: boolean;
   }): Promise<{ items: ProductEntity[]; total: number }> {
     const skip = params?.skip ?? 0;
     const take = params?.take ?? 20;
+    const search = params?.search?.trim();
 
     const where: Prisma.ProductWhereInput = {
-      isActive: true,
+      ...(params?.includeInactive !== true && { isActive: true }),
       ...(params?.categoryId && { categoryId: params.categoryId }),
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
     };
 
     const [products, total] = await this.prisma.$transaction([
@@ -81,7 +96,11 @@ export class PrismaProductRepository implements IProductRepository {
         where,
         skip,
         take,
-        include: { category: true, variants: true },
+        include: {
+          category: true,
+          variants: true,
+          checkoutFields: { orderBy: { createdAt: 'asc' } },
+        },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.product.count({ where }),
@@ -107,8 +126,21 @@ export class PrismaProductRepository implements IProductRepository {
         digitalFileKey: data.digitalFileKey,
         categoryId: data.categoryId,
         createdById: data.createdById!,
+        ...(data.checkoutFields && {
+          checkoutFields: {
+            create: data.checkoutFields.map((f) => ({
+              label: f.label,
+              type: f.type,
+              isRequired: f.isRequired,
+            })),
+          },
+        }),
       },
-      include: { category: true, variants: true },
+      include: {
+        category: true,
+        variants: true,
+        checkoutFields: { orderBy: { createdAt: 'asc' } },
+      },
     });
     return this.toEntity(product);
   }
@@ -145,8 +177,22 @@ export class PrismaProductRepository implements IProductRepository {
           digitalFileKey: data.digitalFileKey,
         }),
         ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
+        ...(data.checkoutFields !== undefined && {
+          checkoutFields: {
+            deleteMany: {},
+            create: data.checkoutFields.map((f) => ({
+              label: f.label,
+              type: f.type,
+              isRequired: f.isRequired,
+            })),
+          },
+        }),
       },
-      include: { category: true, variants: true },
+      include: {
+        category: true,
+        variants: true,
+        checkoutFields: { orderBy: { createdAt: 'asc' } },
+      },
     });
     return this.toEntity(product);
   }
@@ -176,6 +222,8 @@ export class PrismaProductRepository implements IProductRepository {
       createdById: string;
       createdAt: Date;
       updatedAt: Date;
+      variants?: ProductEntity['variants'];
+      checkoutFields?: ProductEntity['checkoutFields'];
     };
     return {
       id: p.id,
@@ -191,6 +239,31 @@ export class PrismaProductRepository implements IProductRepository {
       createdById: p.createdById,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
+      variants: p.variants
+        ? p.variants.map((v) => ({
+            id: v.id,
+            name: v.name,
+            price:
+              v.price !== null && v.price !== undefined
+                ? Number(v.price)
+                : null,
+            stockQuantity: v.stockQuantity,
+            productId: v.productId,
+            createdAt: v.createdAt,
+            updatedAt: v.updatedAt,
+          }))
+        : undefined,
+      checkoutFields: p.checkoutFields
+        ? p.checkoutFields.map((f) => ({
+            id: f.id,
+            productId: f.productId,
+            label: f.label,
+            type: f.type,
+            isRequired: f.isRequired,
+            createdAt: f.createdAt,
+            updatedAt: f.updatedAt,
+          }))
+        : undefined,
     };
   }
 }

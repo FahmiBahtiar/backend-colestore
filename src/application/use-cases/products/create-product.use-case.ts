@@ -35,6 +35,15 @@ export class CreateProductUseCase {
       digitalFileKey: input.digitalFileKey ?? null,
       categoryId: input.categoryId ?? null,
       createdById: input.createdById,
+      checkoutFields: input.checkoutFields
+        ? input.checkoutFields.map((f) => ({
+            id: f.id ?? 'new-field',
+            productId: 'new-product',
+            label: f.label,
+            type: f.type,
+            isRequired: f.isRequired,
+          }))
+        : undefined,
       createdAt: now,
       updatedAt: now,
     });
@@ -61,6 +70,7 @@ export class CreateProductUseCase {
       digitalFileKey: product.digitalFileKey,
       categoryId: product.categoryId,
       createdById: product.createdById,
+      checkoutFields: product.checkoutFields,
     };
   }
 }

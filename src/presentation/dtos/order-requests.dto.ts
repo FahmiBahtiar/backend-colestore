@@ -10,6 +10,21 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+export class OrderItemCheckoutAnswerRequestDto {
+  @ApiPropertyOptional({ example: 'clwfield123' })
+  @IsOptional()
+  @IsString()
+  checkoutFieldId?: string | null;
+
+  @ApiProperty({ example: 'ID Game' })
+  @IsString()
+  label: string;
+
+  @ApiProperty({ example: 'player123' })
+  @IsString()
+  value: string;
+}
+
 export class OrderItemRequestDto {
   @ApiProperty({ example: 'clwproduct123' })
   @IsString()
@@ -24,6 +39,13 @@ export class OrderItemRequestDto {
   @IsInt()
   @Min(1)
   quantity: number;
+
+  @ApiPropertyOptional({ type: [OrderItemCheckoutAnswerRequestDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderItemCheckoutAnswerRequestDto)
+  checkoutAnswers?: OrderItemCheckoutAnswerRequestDto[];
 }
 
 export class PlaceOrderRequestDto {
@@ -38,6 +60,14 @@ export class PlaceOrderRequestDto {
   @IsOptional()
   @IsString()
   couponCode?: string | null;
+
+  @ApiProperty({ example: 'customer@example.com' })
+  @IsString()
+  customerEmail: string;
+
+  @ApiProperty({ example: '081234567890' })
+  @IsString()
+  customerWhatsapp: string;
 }
 
 export class ListOrdersQueryDto {

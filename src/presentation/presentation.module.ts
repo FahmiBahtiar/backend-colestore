@@ -13,6 +13,8 @@ import {
   PaymentsController,
   ProductsController,
   UsersController,
+  PointsController,
+  PointRewardsController,
 } from './controllers';
 import { JwtStrategy } from './strategies';
 
@@ -33,6 +35,8 @@ import { JwtStrategy } from './strategies';
     OrdersController,
     FulfillmentController,
     PaymentsController,
+    PointsController,
+    PointRewardsController,
   ],
   providers: [JwtStrategy],
   exports: [PassportModule],
