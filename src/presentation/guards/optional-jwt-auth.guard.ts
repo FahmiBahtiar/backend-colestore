@@ -8,10 +8,13 @@ import { AuthenticatedUser } from '../auth/authenticated-user';
  */
 @Injectable()
 export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
-  handleRequest(err: unknown, user: AuthenticatedUser | false | null) {
+  handleRequest<TUser = AuthenticatedUser | null>(
+    err: unknown,
+    user: AuthenticatedUser | false | null,
+  ): TUser {
     if (err || !user) {
-      return null;
+      return null as TUser;
     }
-    return user;
+    return user as TUser;
   }
 }
