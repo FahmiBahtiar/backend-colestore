@@ -124,6 +124,7 @@ export class PrismaProductRepository implements IProductRepository {
         hasVariants: data.hasVariants ?? false,
         stockQuantity: data.stockQuantity,
         digitalFileKey: data.digitalFileKey,
+        imageKey: data.imageKey,
         categoryId: data.categoryId,
         createdById: data.createdById!,
         ...(data.checkoutFields && {
@@ -176,6 +177,9 @@ export class PrismaProductRepository implements IProductRepository {
         ...(data.digitalFileKey !== undefined && {
           digitalFileKey: data.digitalFileKey,
         }),
+        ...(data.imageKey !== undefined && {
+          imageKey: data.imageKey,
+        }),
         ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
         ...(data.checkoutFields !== undefined && {
           checkoutFields: {
@@ -218,6 +222,7 @@ export class PrismaProductRepository implements IProductRepository {
       hasVariants: boolean;
       stockQuantity: number | null;
       digitalFileKey: string | null;
+      imageKey: string | null;
       categoryId: string | null;
       createdById: string;
       createdAt: Date;
@@ -235,6 +240,7 @@ export class PrismaProductRepository implements IProductRepository {
       hasVariants: p.hasVariants,
       stockQuantity: p.stockQuantity,
       digitalFileKey: p.digitalFileKey,
+      imageKey: p.imageKey,
       categoryId: p.categoryId,
       createdById: p.createdById,
       createdAt: p.createdAt,

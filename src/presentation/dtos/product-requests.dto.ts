@@ -72,6 +72,11 @@ export class CreateProductRequestDto {
   @IsString()
   digitalFileKey?: string | null;
 
+  @ApiPropertyOptional({ example: 'products/image.png' })
+  @IsOptional()
+  @IsString()
+  imageKey?: string | null;
+
   @ApiPropertyOptional({ example: 'clwcategory123' })
   @IsOptional()
   @IsString()
@@ -118,6 +123,11 @@ export class UpdateProductRequestDto {
   @IsOptional()
   @IsString()
   digitalFileKey?: string | null;
+
+  @ApiPropertyOptional({ example: 'products/image-v2.png' })
+  @IsOptional()
+  @IsString()
+  imageKey?: string | null;
 
   @ApiPropertyOptional({ example: 'clwcategory123' })
   @IsOptional()

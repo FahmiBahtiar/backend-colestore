@@ -6,6 +6,14 @@ export interface PointTransactionEntity {
   points: number;
   amount: number;
   createdAt: Date;
+  couponId?: string | null;
+  coupon?: {
+    code: string;
+    usedCount: number;
+    maxUses: number | null;
+  } | null;
+  userName?: string | null;
+  userEmail?: string | null;
 }
 
 /**
@@ -21,4 +29,9 @@ export interface IPointTransactionRepository {
   ): Promise<{ items: PointTransactionEntity[]; total: number }>;
   findByOrderId(orderId: string): Promise<PointTransactionEntity[]>;
   getTotalPointsByUserId(userId: string): Promise<number>;
+  findAll(params?: {
+    skip?: number;
+    take?: number;
+    type?: 'EARNED' | 'REFUNDED' | 'REDEEMED';
+  }): Promise<{ items: PointTransactionEntity[]; total: number }>;
 }

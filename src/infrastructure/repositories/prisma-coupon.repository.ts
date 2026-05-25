@@ -76,6 +76,7 @@ export class PrismaCouponRepository implements ICouponRepository {
         maxUses: data.maxUses,
         expiresAt: data.expiresAt,
         isActive: data.isActive ?? true,
+        userId: data.userId,
       },
     });
     return this.toEntity(coupon);
@@ -104,6 +105,7 @@ export class PrismaCouponRepository implements ICouponRepository {
         ...(data.maxUses !== undefined && { maxUses: data.maxUses }),
         ...(data.expiresAt !== undefined && { expiresAt: data.expiresAt }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
+        ...(data.userId !== undefined && { userId: data.userId }),
       },
     });
     return this.toEntity(coupon);
@@ -129,6 +131,7 @@ export class PrismaCouponRepository implements ICouponRepository {
     usedCount: number;
     expiresAt: Date | null;
     isActive: boolean;
+    userId: string | null;
     createdAt: Date;
     updatedAt: Date;
   }): CouponEntity {
@@ -142,6 +145,7 @@ export class PrismaCouponRepository implements ICouponRepository {
       usedCount: coupon.usedCount,
       expiresAt: coupon.expiresAt,
       isActive: coupon.isActive,
+      userId: coupon.userId,
       createdAt: coupon.createdAt,
       updatedAt: coupon.updatedAt,
     };

@@ -1,4 +1,5 @@
 export * from './get-user-points.use-case';
+export * from './list-all-transactions.use-case';
 export * from './award-order-points.use-case';
 export * from './revoke-order-points.use-case';
 export * from './redeem-point-reward.use-case';

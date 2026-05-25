@@ -13,6 +13,7 @@ import {
   USER_REPOSITORY,
   POINT_TRANSACTION_REPOSITORY,
   POINT_REWARD_REPOSITORY,
+  FAQ_REPOSITORY,
 } from '../domain/repositories/tokens';
 import { InfrastructureModule } from '../infrastructure';
 import {
@@ -27,6 +28,7 @@ import {
   PrismaUserRepository,
   PrismaPointTransactionRepository,
   PrismaPointRewardRepository,
+  PrismaFaqRepository,
 } from '../infrastructure/repositories';
 import {
   GetActivityLogsUseCase,
@@ -68,6 +70,7 @@ import {
   UpdateUserUseCase,
   ValidateCouponUseCase,
   GetUserPointsUseCase,
+  ListAllPointTransactionsUseCase,
   AwardOrderPointsUseCase,
   RevokeOrderPointsUseCase,
   RedeemPointRewardUseCase,
@@ -75,6 +78,11 @@ import {
   ListPointRewardsUseCase,
   UpdatePointRewardUseCase,
   DeletePointRewardUseCase,
+  CreateFaqUseCase,
+  UpdateFaqUseCase,
+  DeleteFaqUseCase,
+  ListFaqsUseCase,
+  GetFaqDetailUseCase,
 } from './use-cases';
 
 const repositoryProviders = [
@@ -100,6 +108,10 @@ const repositoryProviders = [
   {
     provide: POINT_REWARD_REPOSITORY,
     useClass: PrismaPointRewardRepository,
+  },
+  {
+    provide: FAQ_REPOSITORY,
+    useClass: PrismaFaqRepository,
   },
 ];
 
@@ -143,6 +155,7 @@ const useCaseProviders = [
   DeliverOrderUseCase,
   RefundOrderUseCase,
   GetUserPointsUseCase,
+  ListAllPointTransactionsUseCase,
   AwardOrderPointsUseCase,
   RevokeOrderPointsUseCase,
   RedeemPointRewardUseCase,
@@ -150,6 +163,11 @@ const useCaseProviders = [
   ListPointRewardsUseCase,
   UpdatePointRewardUseCase,
   DeletePointRewardUseCase,
+  CreateFaqUseCase,
+  UpdateFaqUseCase,
+  DeleteFaqUseCase,
+  ListFaqsUseCase,
+  GetFaqDetailUseCase,
 ];
 
 @Module({

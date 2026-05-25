@@ -34,6 +34,7 @@ export class CreateCouponUseCase {
         usedCount: 0,
         expiresAt: input.expiresAt ?? null,
         isActive: input.isActive ?? true,
+        userId: null,
         createdAt: now,
         updatedAt: now,
       });
@@ -59,6 +60,7 @@ export class CreateCouponUseCase {
       usedCount: coupon.usedCount,
       expiresAt: coupon.expiresAt,
       isActive: coupon.isActive,
+      userId: coupon.userId,
     };
   }
 }

@@ -226,6 +226,7 @@ export class PrismaOrderRepository implements IOrderRepository {
       deliveredById: string | null;
       deliveryNote: string | null;
       couponId: string | null;
+      coupon?: { code: string } | null;
       createdAt: Date;
       updatedAt: Date;
       items?: (NonNullable<OrderEntity['items']>[number] & {
@@ -250,6 +251,7 @@ export class PrismaOrderRepository implements IOrderRepository {
       deliveredById: o.deliveredById,
       deliveryNote: o.deliveryNote,
       couponId: o.couponId,
+      couponCode: o.coupon?.code ?? null,
       createdAt: o.createdAt,
       updatedAt: o.updatedAt,
       items: o.items

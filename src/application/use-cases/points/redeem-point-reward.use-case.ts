@@ -78,6 +78,7 @@ export class RedeemPointRewardUseCase {
       usedCount: 0,
       isActive: true,
       expiresAt,
+      userId,
     });
 
     // 6. Deduct points via a REDEEMED transaction
@@ -87,6 +88,7 @@ export class RedeemPointRewardUseCase {
       type: 'REDEEMED',
       points: reward.pointCost,
       amount: 0, // No cash value/transaction amount
+      couponId: coupon.id,
     });
 
     // 7. Increment PointReward redemption count

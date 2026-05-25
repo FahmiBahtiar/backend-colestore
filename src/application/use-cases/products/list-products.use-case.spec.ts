@@ -3,9 +3,11 @@ import {
   IProductRepository,
   ProductEntity,
 } from '../../../domain/repositories';
+import { MinioService } from '../../../infrastructure/services/minio.service';
 
 describe('ListProductsUseCase', () => {
   let repository: jest.Mocked<IProductRepository>;
+  let minioService: jest.Mocked<Pick<MinioService, 'getPresignedUrl'>>;
   let useCase: ListProductsUseCase;
 
   beforeEach(() => {
@@ -18,7 +20,17 @@ describe('ListProductsUseCase', () => {
       findBySlug: jest.fn(),
       findActiveProducts: jest.fn(),
     };
-    useCase = new ListProductsUseCase(repository);
+    minioService = {
+      getPresignedUrl: jest
+        .fn()
+        .mockResolvedValue(
+          'http://localhost:9000/colestore/products/image.png',
+        ),
+    };
+    useCase = new ListProductsUseCase(
+      repository,
+      minioService as jest.Mocked<MinioService>,
+    );
   });
 
   it('returns mapped active products and total count', async () => {
@@ -32,6 +44,7 @@ describe('ListProductsUseCase', () => {
       hasVariants: false,
       stockQuantity: null,
       digitalFileKey: null,
+      imageKey: null,
       categoryId: 'category-1',
       createdById: 'admin-1',
       createdAt: new Date('2026-05-23T00:00:00.000Z'),
@@ -44,7 +57,7 @@ describe('ListProductsUseCase', () => {
 
     await expect(
       useCase.execute({ skip: 0, take: 10, categoryId: 'category-1' }),
-    ).resolves.toEqual({ items: [product], total: 1 });
+    ).resolves.toEqual({ items: [{ ...product, imageUrl: null }], total: 1 });
     expect(repository.findActiveProducts.mock.calls[0]?.[0]).toEqual({
       skip: 0,
       take: 10,

@@ -10,6 +10,7 @@ export interface ProductEntity {
   hasVariants: boolean;
   stockQuantity: number | null;
   digitalFileKey: string | null;
+  imageKey: string | null;
   categoryId: string | null;
   createdById: string;
   createdAt: Date;

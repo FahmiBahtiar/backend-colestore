@@ -12,6 +12,7 @@ export interface ProductProps {
   hasVariants: boolean;
   stockQuantity: number | null;
   digitalFileKey: string | null;
+  imageKey?: string | null;
   categoryId: string | null;
   createdById: string;
   checkoutFields?: {
@@ -33,7 +34,7 @@ export class Product extends BaseEntity {
 
   private constructor(props: ProductProps) {
     super(props);
-    this.props = { ...props };
+    this.props = { ...props, imageKey: props.imageKey ?? null };
     this.validate();
   }
 

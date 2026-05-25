@@ -5,6 +5,8 @@ export interface PointTransactionResponseDto {
   amount: number;
   orderId: string | null;
   createdAt: Date;
+  couponCode?: string | null;
+  couponUsed?: boolean | null;
 }
 
 export interface UserPointsResponseDto {

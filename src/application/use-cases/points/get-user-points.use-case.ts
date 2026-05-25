@@ -24,14 +24,23 @@ export class GetUserPointsUseCase {
 
     return {
       totalPoints,
-      transactions: items.map((t) => ({
-        id: t.id,
-        type: t.type,
-        points: t.points,
-        amount: t.amount,
-        orderId: t.orderId,
-        createdAt: t.createdAt,
-      })),
+      transactions: items.map((t) => {
+        let couponUsed = null;
+        if (t.coupon) {
+          couponUsed =
+            t.coupon.maxUses !== null && t.coupon.usedCount >= t.coupon.maxUses;
+        }
+        return {
+          id: t.id,
+          type: t.type,
+          points: t.points,
+          amount: t.amount,
+          orderId: t.orderId,
+          createdAt: t.createdAt,
+          couponCode: t.coupon?.code ?? null,
+          couponUsed,
+        };
+      }),
       totalTransactions: total,
     };
   }

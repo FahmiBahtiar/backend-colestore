@@ -15,6 +15,8 @@ export interface ProductResponseDto {
   hasVariants: boolean;
   stockQuantity: number | null;
   digitalFileKey: string | null;
+  imageKey: string | null;
+  imageUrl?: string | null;
   categoryId: string | null;
   createdById: string;
   createdAt: Date;
@@ -41,6 +43,7 @@ export interface CreateProductInputDto {
   hasVariants?: boolean;
   stockQuantity?: number | null;
   digitalFileKey?: string | null;
+  imageKey?: string | null;
   categoryId?: string | null;
   createdById: string;
   checkoutFields?: ProductCheckoutFieldDto[];
@@ -54,6 +57,7 @@ export interface UpdateProductInputDto {
   isActive?: boolean;
   stockQuantity?: number | null;
   digitalFileKey?: string | null;
+  imageKey?: string | null;
   categoryId?: string | null;
   checkoutFields?: ProductCheckoutFieldDto[];
 }

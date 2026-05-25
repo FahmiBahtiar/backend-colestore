@@ -21,3 +21,4 @@ export {
   IPointRewardRepository,
   PointRewardEntity,
 } from './point-reward.repository';
+export { IFaqRepository, FaqEntity } from './faq.repository';

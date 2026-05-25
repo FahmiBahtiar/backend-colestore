@@ -25,6 +25,7 @@ model User {
   createdProducts   Product[]          @relation("CreatedByAdmin")
   deliveredOrders   Order[]            @relation("DeliveredBy")
   pointTransactions PointTransaction[]
+  coupons           Coupon[]           @relation("UserCoupons")
 
   @@map("users")
 }
@@ -58,6 +59,7 @@ model Product {
   hasVariants    Boolean  @default(false)
   stockQuantity  Int?
   digitalFileKey String?
+  imageKey       String?
 
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])
@@ -109,6 +111,11 @@ model Coupon {
 
   appliedOrders Order[]
   orderItems    OrderItem[]
+
+  userId         String?
+  user           User?        @relation("UserCoupons", fields: [userId], references: [id])
+
+  pointTransactions PointTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -276,6 +283,8 @@ model PointTransaction {
   user      User                 @relation(fields: [userId], references: [id])
   orderId   String?
   order     Order?               @relation(fields: [orderId], references: [id])
+  couponId  String?
+  coupon    Coupon?              @relation(fields: [couponId], references: [id])
   type      PointTransactionType
   points    Int
   amount    Decimal              @default(0)
@@ -304,3 +313,20 @@ model PointReward {
 
   @@map("point_rewards")
 }
+
+// ============================================================
+// FAQ
+// ============================================================
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String   @db.Text
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("faqs")
+}
+

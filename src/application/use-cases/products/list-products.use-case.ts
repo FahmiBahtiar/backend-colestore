@@ -3,12 +3,14 @@ import { IProductRepository } from '../../../domain/repositories';
 import { PRODUCT_REPOSITORY } from '../../../domain/repositories/tokens';
 import { ListProductsInputDto, ProductResponseDto } from '../../dtos';
 import { ProductMapper } from '../../mappers';
+import { MinioService } from '../../../infrastructure/services/minio.service';
 
 @Injectable()
 export class ListProductsUseCase {
   constructor(
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
+    private readonly minioService: MinioService,
   ) {}
 
   /** List active products with optional category filtering. */
@@ -17,8 +19,28 @@ export class ListProductsUseCase {
     total: number;
   }> {
     const result = await this.productRepository.findActiveProducts(input);
+
+    const items = await Promise.all(
+      result.items.map(async (product) => {
+        let imageUrl: string | null = null;
+        if (product.imageKey) {
+          try {
+            imageUrl = await this.minioService.getPresignedUrl(
+              product.imageKey,
+            );
+          } catch (err) {
+            console.error(
+              'Failed to resolve presigned URL for list product:',
+              err,
+            );
+          }
+        }
+        return ProductMapper.toResponse(product, imageUrl);
+      }),
+    );
+
     return {
-      items: result.items.map((product) => ProductMapper.toResponse(product)),
+      items,
       total: result.total,
     };
   }

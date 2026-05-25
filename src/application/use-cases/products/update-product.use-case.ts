@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Product } from '../../../domain/entities';
 import {
   IProductRepository,
@@ -8,12 +8,16 @@ import { PRODUCT_REPOSITORY } from '../../../domain/repositories/tokens';
 import { ProductResponseDto, UpdateProductInputDto } from '../../dtos';
 import { throwBadRequestForDomainError } from '../../errors';
 import { ProductMapper } from '../../mappers';
+import { MinioService } from '../../../infrastructure/services/minio.service';
 
 @Injectable()
 export class UpdateProductUseCase {
+  private readonly logger = new Logger(UpdateProductUseCase.name);
+
   constructor(
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
+    private readonly minioService: MinioService,
   ) {}
 
   /** Update product details while preserving domain invariants. */
@@ -32,6 +36,7 @@ export class UpdateProductUseCase {
         isActive: input.isActive ?? existing.isActive,
         stockQuantity: input.stockQuantity ?? existing.stockQuantity,
         digitalFileKey: input.digitalFileKey ?? existing.digitalFileKey,
+        imageKey: input.imageKey ?? existing.imageKey,
         categoryId: input.categoryId ?? existing.categoryId,
         checkoutFields: input.checkoutFields
           ? input.checkoutFields.map((f) => ({
@@ -47,12 +52,43 @@ export class UpdateProductUseCase {
       throwBadRequestForDomainError(error);
     }
 
+    const oldImageKey = existing.imageKey;
+    const newImageKey = input.imageKey;
+
     const updated = await this.productRepository.update(
       input.id,
       this.toUpdateData(input),
     );
 
-    return ProductMapper.toResponse(updated);
+    // Clean up old image from MinIO if imageKey was replaced or deleted
+    if (
+      oldImageKey &&
+      newImageKey !== undefined &&
+      oldImageKey !== newImageKey
+    ) {
+      try {
+        await this.minioService.deleteObject(oldImageKey);
+      } catch (err) {
+        this.logger.error(
+          `Failed to delete old image from MinIO productId=${input.id} oldImageKey=${oldImageKey} newImageKey=${newImageKey ?? 'null'}`,
+          err instanceof Error ? err.stack : String(err),
+        );
+      }
+    }
+
+    let imageUrl: string | null = null;
+    if (updated.imageKey) {
+      try {
+        imageUrl = await this.minioService.getPresignedUrl(updated.imageKey);
+      } catch (err) {
+        this.logger.error(
+          `Failed to resolve presigned URL for product image productId=${input.id} imageKey=${updated.imageKey}`,
+          err instanceof Error ? err.stack : String(err),
+        );
+      }
+    }
+
+    return ProductMapper.toResponse(updated, imageUrl);
   }
 
   private toUpdateData(input: UpdateProductInputDto): Partial<ProductEntity> {
@@ -68,6 +104,9 @@ export class UpdateProductUseCase {
       }),
       ...(input.digitalFileKey !== undefined && {
         digitalFileKey: input.digitalFileKey,
+      }),
+      ...(input.imageKey !== undefined && {
+        imageKey: input.imageKey,
       }),
       ...(input.categoryId !== undefined && { categoryId: input.categoryId }),
       ...(input.checkoutFields !== undefined && {

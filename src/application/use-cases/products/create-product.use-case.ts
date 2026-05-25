@@ -1,5 +1,5 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import { Product } from '../../../domain/entities';
+import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Product, ProductProps } from '../../../domain/entities';
 import {
   IProductRepository,
   ProductEntity,
@@ -7,12 +7,16 @@ import {
 import { PRODUCT_REPOSITORY } from '../../../domain/repositories/tokens';
 import { CreateProductInputDto, ProductResponseDto } from '../../dtos';
 import { ProductMapper } from '../../mappers';
+import { MinioService } from '../../../infrastructure/services/minio.service';
 
 @Injectable()
 export class CreateProductUseCase {
+  private readonly logger = new Logger(CreateProductUseCase.name);
+
   constructor(
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
+    private readonly minioService: MinioService,
   ) {}
 
   /** Create a digital product after enforcing domain product invariants. */
@@ -33,6 +37,7 @@ export class CreateProductUseCase {
       hasVariants: input.hasVariants ?? false,
       stockQuantity: input.hasVariants ? null : (input.stockQuantity ?? null),
       digitalFileKey: input.digitalFileKey ?? null,
+      imageKey: input.imageKey ?? null,
       categoryId: input.categoryId ?? null,
       createdById: input.createdById,
       checkoutFields: input.checkoutFields
@@ -53,11 +58,23 @@ export class CreateProductUseCase {
       this.toCreateData(props),
     );
 
-    return ProductMapper.toResponse(created);
+    let imageUrl: string | null = null;
+    if (created.imageKey) {
+      try {
+        imageUrl = await this.minioService.getPresignedUrl(created.imageKey);
+      } catch (err) {
+        this.logger.error(
+          `Failed to resolve presigned URL for product image ${created.imageKey}`,
+          err instanceof Error ? err.stack : String(err),
+        );
+      }
+    }
+
+    return ProductMapper.toResponse(created, imageUrl);
   }
 
   private toCreateData(
-    product: ProductEntity,
+    product: ProductProps,
   ): Omit<ProductEntity, 'id' | 'createdAt' | 'updatedAt'> {
     return {
       name: product.name,
@@ -68,6 +85,7 @@ export class CreateProductUseCase {
       hasVariants: product.hasVariants,
       stockQuantity: product.stockQuantity,
       digitalFileKey: product.digitalFileKey,
+      imageKey: product.imageKey ?? null,
       categoryId: product.categoryId,
       createdById: product.createdById,
       checkoutFields: product.checkoutFields,

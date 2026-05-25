@@ -10,3 +10,4 @@ export { ProductsController } from './products.controller';
 export { UsersController } from './users.controller';
 export { PointsController } from './points.controller';
 export { PointRewardsController } from './point-rewards.controller';
+export { FaqsController } from './faqs.controller';

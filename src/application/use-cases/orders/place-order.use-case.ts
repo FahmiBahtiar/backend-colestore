@@ -133,6 +133,15 @@ export class PlaceOrderUseCase {
     const couponRecord = input.couponCode
       ? await this.couponRepository.findByCode(input.couponCode.toUpperCase())
       : null;
+
+    if (couponRecord) {
+      if (couponRecord.userId && couponRecord.userId !== input.userId) {
+        throw new BadRequestException(
+          'This coupon is not assigned to you or is invalid.',
+        );
+      }
+    }
+
     const coupon = couponRecord ? Coupon.create(couponRecord) : null;
     const discountAmount = coupon
       ? this.calculateDiscount(coupon, totalAmount)

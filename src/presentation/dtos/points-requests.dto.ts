@@ -24,6 +24,13 @@ export class ListPointsQueryDto {
   take?: number;
 }
 
+export class ListAllPointTransactionsQueryDto extends ListPointsQueryDto {
+  @ApiPropertyOptional({ enum: ['EARNED', 'REFUNDED', 'REDEEMED'] })
+  @IsOptional()
+  @IsEnum(['EARNED', 'REFUNDED', 'REDEEMED'])
+  type?: 'EARNED' | 'REFUNDED' | 'REDEEMED';
+}
+
 export class ListPointRewardsQueryDto {
   @ApiPropertyOptional({ example: false })
   @IsOptional()

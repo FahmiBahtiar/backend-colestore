@@ -3,12 +3,14 @@ import { IProductRepository } from '../../../domain/repositories';
 import { PRODUCT_REPOSITORY } from '../../../domain/repositories/tokens';
 import { ProductResponseDto } from '../../dtos';
 import { ProductMapper } from '../../mappers';
+import { MinioService } from '../../../infrastructure/services/minio.service';
 
 @Injectable()
 export class GetProductDetailUseCase {
   constructor(
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
+    private readonly minioService: MinioService,
   ) {}
 
   /** Retrieve one product by id. */
@@ -17,6 +19,19 @@ export class GetProductDetailUseCase {
     if (!product) {
       throw new NotFoundException('Product not found');
     }
-    return ProductMapper.toResponse(product);
+
+    let imageUrl: string | null = null;
+    if (product.imageKey) {
+      try {
+        imageUrl = await this.minioService.getPresignedUrl(product.imageKey);
+      } catch (err) {
+        console.error(
+          'Failed to resolve presigned URL for product detail:',
+          err,
+        );
+      }
+    }
+
+    return ProductMapper.toResponse(product, imageUrl);
   }
 }

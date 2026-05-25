@@ -15,12 +15,13 @@ import {
 } from '@nestjs/swagger';
 import {
   GetUserPointsUseCase,
+  ListAllPointTransactionsUseCase,
   RedeemPointRewardUseCase,
   ListPointRewardsUseCase,
 } from '../../application/use-cases';
-import { CurrentUser } from '../../common/decorators';
-import { ListPointsQueryDto } from '../dtos';
-import { JwtAuthGuard } from '../guards';
+import { CurrentUser, Roles } from '../../common/decorators';
+import { ListAllPointTransactionsQueryDto, ListPointsQueryDto } from '../dtos';
+import { JwtAuthGuard, RolesGuard } from '../guards';
 import { AuthenticatedUser } from '../auth/authenticated-user';
 
 @ApiTags('points')
@@ -30,6 +31,7 @@ import { AuthenticatedUser } from '../auth/authenticated-user';
 export class PointsController {
   constructor(
     private readonly getUserPointsUseCase: GetUserPointsUseCase,
+    private readonly listAllPointTransactionsUseCase: ListAllPointTransactionsUseCase,
     private readonly redeemPointRewardUseCase: RedeemPointRewardUseCase,
     private readonly listPointRewardsUseCase: ListPointRewardsUseCase,
   ) {}
@@ -43,6 +45,21 @@ export class PointsController {
     @Query() query: ListPointsQueryDto,
   ) {
     return this.getUserPointsUseCase.execute(user.id, query);
+  }
+
+  /** Get all point transactions as an admin */
+  @Get('admin/history')
+  @Roles('ADMIN')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get all point transactions history' })
+  async getAllTransactions(@Query() query: ListAllPointTransactionsQueryDto) {
+    const { skip, take, type } = query;
+    return this.listAllPointTransactionsUseCase.execute({
+      skip,
+      take,
+      type,
+    });
   }
 
   /** Redeem points for a reward template (generates a checkout coupon) */

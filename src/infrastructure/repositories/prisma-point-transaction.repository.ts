@@ -19,6 +19,7 @@ export class PrismaPointTransactionRepository implements IPointTransactionReposi
         type: data.type,
         points: data.points,
         amount: data.amount,
+        couponId: data.couponId,
       },
     });
     return this.toEntity(record);
@@ -36,6 +37,15 @@ export class PrismaPointTransactionRepository implements IPointTransactionReposi
         where: { userId },
         skip,
         take,
+        include: {
+          coupon: {
+            select: {
+              code: true,
+              usedCount: true,
+              maxUses: true,
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.pointTransaction.count({ where: { userId } }),
@@ -70,6 +80,47 @@ export class PrismaPointTransactionRepository implements IPointTransactionReposi
     return Math.max(0, totalEarned - totalSpent);
   }
 
+  async findAll(params?: {
+    skip?: number;
+    take?: number;
+    type?: 'EARNED' | 'REFUNDED' | 'REDEEMED';
+  }): Promise<{ items: PointTransactionEntity[]; total: number }> {
+    const skip = params?.skip ?? 0;
+    const take = params?.take ?? 50;
+    const where = params?.type ? { type: params.type } : {};
+
+    const [records, total] = await this.prisma.$transaction([
+      this.prisma.pointTransaction.findMany({
+        where,
+        skip,
+        take,
+        include: {
+          user: { select: { name: true, email: true } },
+          coupon: {
+            select: {
+              code: true,
+              usedCount: true,
+              maxUses: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.pointTransaction.count({ where }),
+    ]);
+
+    return {
+      items: records.map((r) =>
+        this.toEntity({
+          ...r,
+          userName: r.user?.name ?? 'Guest',
+          userEmail: r.user?.email ?? '',
+        }),
+      ),
+      total,
+    };
+  }
+
   private toEntity(record: {
     id: string;
     userId: string;
@@ -78,6 +129,14 @@ export class PrismaPointTransactionRepository implements IPointTransactionReposi
     points: number;
     amount: unknown;
     createdAt: Date;
+    couponId?: string | null;
+    coupon?: {
+      code: string;
+      usedCount: number;
+      maxUses: number | null;
+    } | null;
+    userName?: string | null;
+    userEmail?: string | null;
   }): PointTransactionEntity {
     return {
       id: record.id,
@@ -87,6 +146,16 @@ export class PrismaPointTransactionRepository implements IPointTransactionReposi
       points: record.points,
       amount: Number(record.amount),
       createdAt: record.createdAt,
+      couponId: record.couponId ?? null,
+      coupon: record.coupon
+        ? {
+            code: record.coupon.code,
+            usedCount: record.coupon.usedCount,
+            maxUses: record.coupon.maxUses,
+          }
+        : null,
+      userName: record.userName ?? null,
+      userEmail: record.userEmail ?? null,
     };
   }
 }

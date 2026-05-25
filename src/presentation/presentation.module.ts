@@ -15,6 +15,7 @@ import {
   UsersController,
   PointsController,
   PointRewardsController,
+  FaqsController,
 } from './controllers';
 import { JwtStrategy } from './strategies';
 
@@ -37,6 +38,7 @@ import { JwtStrategy } from './strategies';
     PaymentsController,
     PointsController,
     PointRewardsController,
+    FaqsController,
   ],
   providers: [JwtStrategy],
   exports: [PassportModule],

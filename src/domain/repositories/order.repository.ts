@@ -23,6 +23,7 @@ export interface OrderEntity {
   deliveredById: string | null;
   deliveryNote: string | null;
   couponId: string | null;
+  couponCode?: string | null;
   createdAt: Date;
   updatedAt: Date;
   items?: {
