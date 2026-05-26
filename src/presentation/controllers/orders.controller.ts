@@ -54,6 +54,8 @@ export class OrdersController {
       couponCode: body.couponCode,
       customerEmail: body.customerEmail,
       customerWhatsapp: body.customerWhatsapp,
+      paymentMethodType: body.paymentMethodType,
+      paymentChannel: body.paymentChannel,
     });
   }
 

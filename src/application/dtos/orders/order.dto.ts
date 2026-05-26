@@ -9,9 +9,13 @@ export interface OrderResponseDto {
   discountAmount: number;
   finalAmount: number;
   status: OrderStatus;
-  xenditInvoiceId: string | null;
-  xenditInvoiceUrl: string | null;
-  xenditInvoiceExpiresAt: Date | null;
+  paymentGatewayInvoiceId: string | null;
+  paymentGatewayInvoiceUrl: string | null;
+  paymentGatewayExpiresAt: Date | null;
+  paymentGatewayRequestId: string | null;
+  paymentMethodType: string | null;
+  paymentChannel: string | null;
+  paymentInstructions: Record<string, unknown> | null;
   paymentProof: string | null;
   deliveredAt: Date | null;
   deliveredById: string | null;
@@ -41,12 +45,18 @@ export interface PlaceOrderInputDto {
   couponCode?: string | null;
   customerEmail: string;
   customerWhatsapp: string;
+  paymentMethodType: string;
+  paymentChannel: string;
 }
 
 export interface PlaceOrderResultDto {
   order: OrderResponseDto;
-  invoiceId: string | null;
-  invoiceUrl: string | null;
+  paymentRequestId: string | null;
+  paymentInstructions: Record<string, unknown> | null;
+  /** @deprecated kept for backward compatibility */
+  invoiceId?: string | null;
+  /** @deprecated kept for backward compatibility */
+  invoiceUrl?: string | null;
 }
 
 export interface ListOrdersInputDto {

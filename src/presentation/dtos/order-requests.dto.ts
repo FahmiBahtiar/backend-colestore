@@ -68,6 +68,20 @@ export class PlaceOrderRequestDto {
   @ApiProperty({ example: '081234567890' })
   @IsString()
   customerWhatsapp: string;
+
+  @ApiProperty({
+    example: 'VIRTUAL_ACCOUNT',
+    description: 'Payment method type: VIRTUAL_ACCOUNT, QR_CODE, EWALLET',
+  })
+  @IsString()
+  paymentMethodType: string;
+
+  @ApiProperty({
+    example: 'BCA',
+    description: 'Payment channel code, e.g. BCA, BNI, QRIS, OVO, DANA',
+  })
+  @IsString()
+  paymentChannel: string;
 }
 
 export class ListOrdersQueryDto {

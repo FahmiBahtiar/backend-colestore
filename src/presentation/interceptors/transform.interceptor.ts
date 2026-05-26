@@ -27,6 +27,13 @@ export class TransformInterceptor<T> implements NestInterceptor<
           return data as ApiResponse<T>;
         }
 
+        const request = context.switchToHttp().getRequest<{ url: string }>();
+        // Bypass transformation for payment webhook endpoints or plain text 'OK' responses
+        if (request.url.includes('/payments/duitku/webhook') || data === 'OK') {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+          return data as any;
+        }
+
         const response = context
           .switchToHttp()
           .getResponse<{ statusCode: number }>();

@@ -14,6 +14,7 @@ import {
   POINT_TRANSACTION_REPOSITORY,
   POINT_REWARD_REPOSITORY,
   FAQ_REPOSITORY,
+  PAYMENT_METHOD_CONFIG_REPOSITORY,
 } from '../domain/repositories/tokens';
 import { InfrastructureModule } from '../infrastructure';
 import {
@@ -29,6 +30,7 @@ import {
   PrismaPointTransactionRepository,
   PrismaPointRewardRepository,
   PrismaFaqRepository,
+  PrismaPaymentMethodConfigRepository,
 } from '../infrastructure/repositories';
 import {
   GetActivityLogsUseCase,
@@ -57,7 +59,8 @@ import {
   ListUsersUseCase,
   LoginUseCase,
   PlaceOrderUseCase,
-  ProcessXenditWebhookUseCase,
+  ProcessPaymentWebhookUseCase,
+  GetPaymentMethodsUseCase,
   RedeemCouponUseCase,
   RefreshTokenUseCase,
   RegisterUserUseCase,
@@ -83,6 +86,8 @@ import {
   DeleteFaqUseCase,
   ListFaqsUseCase,
   GetFaqDetailUseCase,
+  GetPaymentMethodConfigsUseCase,
+  TogglePaymentMethodConfigUseCase,
 } from './use-cases';
 
 const repositoryProviders = [
@@ -112,6 +117,10 @@ const repositoryProviders = [
   {
     provide: FAQ_REPOSITORY,
     useClass: PrismaFaqRepository,
+  },
+  {
+    provide: PAYMENT_METHOD_CONFIG_REPOSITORY,
+    useClass: PrismaPaymentMethodConfigRepository,
   },
 ];
 
@@ -150,7 +159,10 @@ const useCaseProviders = [
   CancelOrderUseCase,
   GetUserOrdersUseCase,
   GetOrderDetailUseCase,
-  ProcessXenditWebhookUseCase,
+  ProcessPaymentWebhookUseCase,
+  GetPaymentMethodsUseCase,
+  GetPaymentMethodConfigsUseCase,
+  TogglePaymentMethodConfigUseCase,
   StartOrderProcessingUseCase,
   DeliverOrderUseCase,
   RefundOrderUseCase,

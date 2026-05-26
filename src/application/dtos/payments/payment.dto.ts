@@ -1,10 +1,10 @@
 import { OrderStatus } from '../../../domain/entities';
 
-export interface ProcessXenditWebhookInputDto {
+export interface ProcessPaymentWebhookInputDto {
   payload: unknown;
 }
 
-export interface ProcessXenditWebhookResultDto {
+export interface ProcessPaymentWebhookResultDto {
   orderId: string;
   status: OrderStatus;
   processed: boolean;

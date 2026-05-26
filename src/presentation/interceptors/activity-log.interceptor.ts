@@ -91,8 +91,7 @@ export class ActivityLogInterceptor implements NestInterceptor {
     if (path.includes('/products') || path.includes('/categories'))
       return 'PRODUCT';
     if (path.includes('/orders')) return 'ORDER';
-    if (path.includes('/payments') || path.includes('/xendit'))
-      return 'PAYMENT';
+    if (path.includes('/payments')) return 'PAYMENT';
     if (path.includes('/deliver')) return 'DELIVERY';
     if (path.includes('/coupons') || path.includes('/vouchers'))
       return 'COUPON';

@@ -18,9 +18,13 @@ export interface OrderProps {
   discountAmount: number;
   finalAmount: number;
   status: OrderStatus;
-  xenditInvoiceId: string | null;
-  xenditInvoiceUrl: string | null;
-  xenditInvoiceExpiresAt: Date | null;
+  paymentGatewayInvoiceId: string | null;
+  paymentGatewayInvoiceUrl: string | null;
+  paymentGatewayExpiresAt: Date | null;
+  paymentGatewayRequestId: string | null;
+  paymentMethodType: string | null;
+  paymentChannel: string | null;
+  paymentInstructions: Record<string, unknown> | null;
   paymentProof: string | null;
   deliveredAt: Date | null;
   deliveredById: string | null;
@@ -52,7 +56,7 @@ export class Order extends BaseEntity {
     return this.props.status;
   }
 
-  /** Attach payment invoice while order is pending. */
+  /** Attach payment invoice while order is pending (legacy hosted checkout). */
   attachInvoice(
     invoiceId: string,
     invoiceUrl?: string | null,
@@ -60,10 +64,26 @@ export class Order extends BaseEntity {
   ): void {
     this.ensureStatus(['PENDING']);
     this.requireNonEmpty(invoiceId, 'Invoice id is required');
-    this.props.xenditInvoiceId = invoiceId;
-    this.props.xenditInvoiceUrl = invoiceUrl ?? this.props.xenditInvoiceUrl;
-    this.props.xenditInvoiceExpiresAt =
-      expiresAt ?? this.props.xenditInvoiceExpiresAt;
+    this.props.paymentGatewayInvoiceId = invoiceId;
+    this.props.paymentGatewayInvoiceUrl =
+      invoiceUrl ?? this.props.paymentGatewayInvoiceUrl;
+    this.props.paymentGatewayExpiresAt =
+      expiresAt ?? this.props.paymentGatewayExpiresAt;
+  }
+
+  /** Attach payment request data while order is pending (custom checkout). */
+  attachPaymentRequest(
+    paymentRequestId: string,
+    paymentMethodType: string,
+    paymentChannel: string,
+    paymentInstructions: Record<string, unknown> | null,
+  ): void {
+    this.ensureStatus(['PENDING']);
+    this.requireNonEmpty(paymentRequestId, 'Payment request id is required');
+    this.props.paymentGatewayRequestId = paymentRequestId;
+    this.props.paymentMethodType = paymentMethodType;
+    this.props.paymentChannel = paymentChannel;
+    this.props.paymentInstructions = paymentInstructions;
   }
 
   /** Mark order as paid after trusted payment confirmation. */

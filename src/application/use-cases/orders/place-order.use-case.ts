@@ -23,7 +23,9 @@ import {
   ORDER_REPOSITORY,
   PRODUCT_REPOSITORY,
   PRODUCT_VARIANT_REPOSITORY,
+  PAYMENT_METHOD_CONFIG_REPOSITORY,
 } from '../../../domain/repositories/tokens';
+import { IPaymentMethodConfigRepository } from '../../../domain/repositories/payment-method-config.repository';
 import {
   IOrderItemRepositoryPort,
   IPaymentGatewayPort,
@@ -48,11 +50,13 @@ export class PlaceOrderUseCase {
     private readonly orderRepository: IOrderRepository,
     @Inject(ORDER_ITEM_REPOSITORY)
     private readonly orderItemRepository: IOrderItemRepositoryPort,
+    @Inject(PAYMENT_METHOD_CONFIG_REPOSITORY)
+    private readonly configRepository: IPaymentMethodConfigRepository,
     @Inject(PAYMENT_GATEWAY)
     private readonly paymentGateway: IPaymentGatewayPort,
   ) {}
 
-  /** Place an order, apply coupon rules, and request a payment invoice. */
+  /** Place an order, apply coupon rules, and request a payment via custom checkout. */
   async execute(input: PlaceOrderInputDto): Promise<PlaceOrderResultDto> {
     if (input.items.length === 0) {
       throw new BadRequestException('Order must contain at least one item');
@@ -158,9 +162,13 @@ export class PlaceOrderUseCase {
       discountAmount,
       finalAmount,
       status: 'PENDING',
-      xenditInvoiceId: null,
-      xenditInvoiceUrl: null,
-      xenditInvoiceExpiresAt: null,
+      paymentGatewayInvoiceId: null,
+      paymentGatewayInvoiceUrl: null,
+      paymentGatewayExpiresAt: null,
+      paymentGatewayRequestId: null,
+      paymentMethodType: null,
+      paymentChannel: null,
+      paymentInstructions: null,
       paymentProof: null,
       deliveredAt: null,
       deliveredById: null,
@@ -190,28 +198,42 @@ export class PlaceOrderUseCase {
       await this.couponRepository.incrementUsedCount(couponRecord.id);
     }
 
-    const invoice = await this.paymentGateway.createInvoice({
+    const config = await this.configRepository.findByTypeAndChannel(
+      input.paymentMethodType,
+      input.paymentChannel,
+    );
+    const expiryMinutes = config?.paymentExpiryHours ?? 1440; // Treat the database column value as minutes (default: 24 hours = 1440 minutes)
+
+    // Custom checkout: create Payment Request via Xendit
+    const paymentResult = await this.paymentGateway.createPaymentRequest({
       orderId: createdOrder.id,
       amount: createdOrder.finalAmount,
+      paymentMethodType: input.paymentMethodType,
+      paymentChannel: input.paymentChannel,
+      payerEmail: input.customerEmail,
+      expiryMinutes,
       items: pricedItems.map((item) => ({
         name: this.buildInvoiceItemName(item.productName, item.variantName),
         quantity: item.quantity,
         price: item.unitPrice,
       })),
     });
-    const orderWithInvoice = await this.orderRepository.update(
+
+    const orderWithPayment = await this.orderRepository.update(
       createdOrder.id,
       {
-        xenditInvoiceId: invoice.invoiceId,
-        xenditInvoiceUrl: invoice.invoiceUrl,
-        xenditInvoiceExpiresAt: invoice.expiresAt ?? null,
+        paymentGatewayRequestId: paymentResult.paymentRequestId,
+        paymentMethodType: paymentResult.paymentMethodType,
+        paymentChannel: paymentResult.paymentChannel,
+        paymentInstructions: paymentResult.paymentInstructions,
+        paymentGatewayExpiresAt: paymentResult.expiresAt,
       },
     );
 
     return {
-      order: OrderMapper.toResponse(orderWithInvoice),
-      invoiceId: invoice.invoiceId,
-      invoiceUrl: invoice.invoiceUrl,
+      order: OrderMapper.toResponse(orderWithPayment),
+      paymentRequestId: paymentResult.paymentRequestId,
+      paymentInstructions: paymentResult.paymentInstructions,
     };
   }
 
@@ -226,9 +248,13 @@ export class PlaceOrderUseCase {
       discountAmount: order.discountAmount,
       finalAmount: order.finalAmount,
       status: order.status,
-      xenditInvoiceId: order.xenditInvoiceId,
-      xenditInvoiceUrl: order.xenditInvoiceUrl,
-      xenditInvoiceExpiresAt: order.xenditInvoiceExpiresAt,
+      paymentGatewayInvoiceId: order.paymentGatewayInvoiceId,
+      paymentGatewayInvoiceUrl: order.paymentGatewayInvoiceUrl,
+      paymentGatewayExpiresAt: order.paymentGatewayExpiresAt,
+      paymentGatewayRequestId: order.paymentGatewayRequestId,
+      paymentMethodType: order.paymentMethodType,
+      paymentChannel: order.paymentChannel,
+      paymentInstructions: order.paymentInstructions,
       paymentProof: order.paymentProof,
       deliveredAt: order.deliveredAt,
       deliveredById: order.deliveredById,

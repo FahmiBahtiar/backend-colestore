@@ -18,6 +18,7 @@ import {
   FaqsController,
 } from './controllers';
 import { JwtStrategy } from './strategies';
+import { OrdersGateway } from './gateways/orders.gateway';
 
 @Module({
   imports: [
@@ -40,7 +41,7 @@ import { JwtStrategy } from './strategies';
     PointRewardsController,
     FaqsController,
   ],
-  providers: [JwtStrategy],
+  providers: [JwtStrategy, OrdersGateway],
   exports: [PassportModule],
 })
 export class PresentationModule {}

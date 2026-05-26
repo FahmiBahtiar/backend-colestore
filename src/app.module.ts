@@ -18,7 +18,7 @@ import {
   redisConfig,
   minioConfig,
   jwtConfig,
-  xenditConfig,
+  duitkuConfig,
   throttleConfig,
 } from './config';
 import { AppController } from './app.controller';
@@ -36,7 +36,7 @@ import { AppService } from './app.service';
         redisConfig,
         minioConfig,
         jwtConfig,
-        xenditConfig,
+        duitkuConfig,
         throttleConfig,
       ],
     }),

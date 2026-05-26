@@ -144,9 +144,13 @@ model Order {
   finalAmount    Decimal
 
   status           OrderStatus @default(PENDING)
-  xenditInvoiceId  String?
-  xenditInvoiceUrl String?
-  xenditInvoiceExpiresAt DateTime?
+  paymentGatewayInvoiceId  String?
+  paymentGatewayInvoiceUrl String?
+  paymentGatewayExpiresAt DateTime?
+  paymentGatewayRequestId String?
+  paymentMethodType      String?
+  paymentChannel         String?
+  paymentInstructions    Json?
   paymentProof     String?
 
   deliveredAt   DateTime?
@@ -164,6 +168,7 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([paymentGatewayRequestId])
   @@map("orders")
 }
 
@@ -328,5 +333,23 @@ model Faq {
   updatedAt DateTime @updatedAt
 
   @@map("faqs")
+}
+
+// ============================================================
+// PAYMENT METHOD CONFIG
+// ============================================================
+
+model PaymentMethodConfig {
+  id                 String   @id @default(cuid())
+  type               String   // e.g. VIRTUAL_ACCOUNT, QR_CODE, EWALLET
+  channel            String   // e.g. BCA, BNI, QRIS, OVO, DANA
+  name               String   // e.g. BCA Virtual Account
+  isActive           Boolean  @default(true)
+  paymentExpiryHours Int      @default(24) // Expiry limit in hours (default: 24)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([type, channel])
+  @@map("payment_method_configs")
 }
 

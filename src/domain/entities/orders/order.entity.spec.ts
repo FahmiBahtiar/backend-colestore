@@ -14,9 +14,13 @@ function makeOrder(overrides: Partial<OrderProps> = {}): Order {
     discountAmount: 10_000,
     finalAmount: 90_000,
     status: 'PENDING',
-    xenditInvoiceId: null,
-    xenditInvoiceUrl: null,
-    xenditInvoiceExpiresAt: null,
+    paymentGatewayInvoiceId: null,
+    paymentGatewayInvoiceUrl: null,
+    paymentGatewayExpiresAt: null,
+    paymentGatewayRequestId: null,
+    paymentMethodType: null,
+    paymentChannel: null,
+    paymentInstructions: null,
     paymentProof: null,
     deliveredAt: null,
     deliveredById: null,
@@ -38,7 +42,7 @@ describe('Order entity', () => {
 
     order.attachInvoice('invoice-1');
 
-    expect(order.toPrimitives().xenditInvoiceId).toBe('invoice-1');
+    expect(order.toPrimitives().paymentGatewayInvoiceId).toBe('invoice-1');
   });
 
   it('moves through paid, processing, and delivered states', () => {
