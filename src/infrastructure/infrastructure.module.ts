@@ -9,7 +9,7 @@ import { MinioService, DuitkuService } from './services';
   providers: [
     MinioService,
     DuitkuService,
-    { provide: PAYMENT_GATEWAY, useClass: DuitkuService },
+    { provide: PAYMENT_GATEWAY, useExisting: DuitkuService },
   ],
   exports: [
     PrismaModule,

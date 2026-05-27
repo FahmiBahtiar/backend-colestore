@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { IProductRepository } from '../../../domain/repositories';
 import { PRODUCT_REPOSITORY } from '../../../domain/repositories/tokens';
 import { ListProductsInputDto, ProductResponseDto } from '../../dtos';
@@ -7,6 +7,8 @@ import { MinioService } from '../../../infrastructure/services/minio.service';
 
 @Injectable()
 export class ListProductsUseCase {
+  private readonly logger = new Logger(ListProductsUseCase.name);
+
   constructor(
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
@@ -29,9 +31,10 @@ export class ListProductsUseCase {
               product.imageKey,
             );
           } catch (err) {
-            console.error(
-              'Failed to resolve presigned URL for list product:',
-              err,
+            const error = err as Error;
+            this.logger.error(
+              `Failed to resolve presigned URL for product list (ID: ${product.id}, imageKey: ${product.imageKey}): ${error.message}`,
+              error.stack,
             );
           }
         }

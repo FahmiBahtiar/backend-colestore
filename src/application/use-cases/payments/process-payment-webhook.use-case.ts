@@ -80,7 +80,7 @@ export class ProcessPaymentWebhookUseCase {
       await this.awardOrderPointsUseCase.execute(updated);
 
       // Emit the payment success event to update connected WebSocket clients in real-time
-      paymentEvents.emit('payment_success', {
+      paymentEvents.emit('payment_status_changed', {
         orderId: updated.id,
         status: 'PAID',
       });

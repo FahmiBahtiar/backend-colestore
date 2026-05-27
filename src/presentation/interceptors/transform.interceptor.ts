@@ -28,8 +28,8 @@ export class TransformInterceptor<T> implements NestInterceptor<
         }
 
         const request = context.switchToHttp().getRequest<{ url: string }>();
-        // Bypass transformation for payment webhook endpoints or plain text 'OK' responses
-        if (request.url.includes('/payments/duitku/webhook') || data === 'OK') {
+        // Bypass transformation for payment webhook endpoints specifically
+        if (request.url.includes('/payments/duitku/webhook')) {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-return
           return data as any;
         }

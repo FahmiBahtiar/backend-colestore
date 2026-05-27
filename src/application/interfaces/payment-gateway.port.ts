@@ -23,6 +23,7 @@ export interface CreatePaymentRequestInput {
   paymentMethodType: string;
   paymentChannel: string;
   payerEmail?: string;
+  payerPhone?: string;
   items?: PaymentInvoiceItem[];
   expiryMinutes?: number;
 }

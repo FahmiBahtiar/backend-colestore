@@ -51,12 +51,14 @@ async function bootstrap(): Promise<void> {
   // Response compression
   app.use(compression());
 
-  // Log all incoming requests to help diagnose webhook routes
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    const logger = new Logger('IncomingRequest');
-    logger.log(`${req.method} ${req.url}`);
-    next();
-  });
+  // Log all incoming requests in development/testing only, reusing a single logger instance to prevent overhead
+  if (nodeEnv !== 'production') {
+    const requestLogger = new Logger('IncomingRequest');
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      requestLogger.log(`${req.method} ${req.url}`);
+      next();
+    });
+  }
 
   // Global validation pipe — validates all incoming DTOs
   app.useGlobalPipes(

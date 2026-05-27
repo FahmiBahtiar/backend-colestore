@@ -48,7 +48,7 @@ export class GetOrderDetailUseCase {
       });
 
       // Emit WebSocket event to update connected clients in real-time
-      paymentEvents.emit('payment_success', {
+      paymentEvents.emit('payment_status_changed', {
         orderId: order.id,
         status: 'CANCELLED',
       });
@@ -70,6 +70,11 @@ export class GetOrderDetailUseCase {
       // Set the cooldown timestamp immediately to prevent race conditions
       GetOrderDetailUseCase.pollCooldowns.set(order.id, now);
 
+      // Automatically evict/cleanup this entry from the map after the cooldown expires
+      setTimeout(() => {
+        GetOrderDetailUseCase.pollCooldowns.delete(order.id);
+      }, cooldownMs);
+
       try {
         const checkResult = await this.paymentGateway.checkTransactionStatus(
           order.id,
@@ -90,7 +95,7 @@ export class GetOrderDetailUseCase {
           await this.awardOrderPointsUseCase.execute(updated);
 
           // Emit the payment success event to update connected WebSocket clients in real-time
-          paymentEvents.emit('payment_success', {
+          paymentEvents.emit('payment_status_changed', {
             orderId: order.id,
             status: 'PAID',
           });

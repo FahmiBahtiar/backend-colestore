@@ -184,7 +184,9 @@ export class DuitkuService implements IPaymentGatewayPort {
         ? input.payerEmail.split('@')[0]
         : 'ColeStore VA',
       email: input.payerEmail || 'customer@colestore.com',
-      phoneNumber: '081234567890',
+      phoneNumber: input.payerPhone
+        ? input.payerPhone.replace(/\D/g, '')
+        : '081234567890',
       itemDetails:
         input.items?.map((item) => ({
           name: item.name,

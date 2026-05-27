@@ -202,15 +202,16 @@ export class PlaceOrderUseCase {
       input.paymentMethodType,
       input.paymentChannel,
     );
-    const expiryMinutes = config?.paymentExpiryHours ?? 1440; // Treat the database column value as minutes (default: 24 hours = 1440 minutes)
+    const expiryMinutes = (config?.paymentExpiryHours ?? 24) * 60;
 
-    // Custom checkout: create Payment Request via Xendit
+    // Custom checkout: create Payment Request via active PAYMENT_GATEWAY
     const paymentResult = await this.paymentGateway.createPaymentRequest({
       orderId: createdOrder.id,
       amount: createdOrder.finalAmount,
       paymentMethodType: input.paymentMethodType,
       paymentChannel: input.paymentChannel,
       payerEmail: input.customerEmail,
+      payerPhone: input.customerWhatsapp,
       expiryMinutes,
       items: pricedItems.map((item) => ({
         name: this.buildInvoiceItemName(item.productName, item.variantName),

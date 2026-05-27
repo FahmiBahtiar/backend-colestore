@@ -23,8 +23,8 @@ import {
   GetPaymentMethodConfigsUseCase,
   TogglePaymentMethodConfigUseCase,
 } from '../../application/use-cases';
-import { DuitkuService } from '../../infrastructure/services';
 import { JwtAuthGuard, RolesGuard } from '../guards';
+import { UpdatePaymentConfigDto } from '../dtos';
 import { Roles } from '../../common/decorators';
 
 @ApiTags('payments')
@@ -35,7 +35,6 @@ export class PaymentsController {
     private readonly getPaymentMethodsUseCase: GetPaymentMethodsUseCase,
     private readonly getPaymentMethodConfigsUseCase: GetPaymentMethodConfigsUseCase,
     private readonly togglePaymentMethodConfigUseCase: TogglePaymentMethodConfigUseCase,
-    private readonly duitkuService: DuitkuService,
   ) {}
 
   /** Return available payment methods for custom checkout. */
@@ -66,7 +65,7 @@ export class PaymentsController {
   @ApiResponse({ status: 200, description: 'Payment config updated.' })
   async togglePaymentConfig(
     @Param('id') id: string,
-    @Body() body: { isActive?: boolean; paymentExpiryHours?: number },
+    @Body() body: UpdatePaymentConfigDto,
   ) {
     return this.togglePaymentMethodConfigUseCase.execute(id, body);
   }
@@ -87,9 +86,25 @@ export class PaymentsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Process Duitku webhook' })
   @ApiResponse({ status: 200, description: 'Webhook processed.' })
-  async processDuitkuWebhook(@Body() payload: any) {
+  async processDuitkuWebhook(@Body() payload: Record<string, unknown>) {
     const logger = new Logger('PaymentsController:DuitkuWebhook');
-    logger.log(`Received Duitku Webhook Callback: ${JSON.stringify(payload)}`);
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug(
+        `Received Duitku Webhook Callback (Full Payload): ${JSON.stringify(payload)}`,
+      );
+    } else {
+      const merchantOrderId =
+        typeof payload.merchantOrderId === 'string'
+          ? payload.merchantOrderId
+          : '';
+      const reference =
+        typeof payload.reference === 'string' ? payload.reference : '';
+      const resultCode =
+        typeof payload.resultCode === 'string' ? payload.resultCode : '';
+      logger.log(
+        `Received Duitku Webhook Callback for order: ${merchantOrderId}, reference: ${reference}, resultCode: ${resultCode}`,
+      );
+    }
     try {
       const result = await this.processPaymentWebhookUseCase.execute({
         payload,
