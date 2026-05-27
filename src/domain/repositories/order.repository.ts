@@ -15,14 +15,19 @@ export interface OrderEntity {
     | 'DELIVERED'
     | 'CANCELLED'
     | 'REFUNDED';
-  xenditInvoiceId: string | null;
-  xenditInvoiceUrl: string | null;
-  xenditInvoiceExpiresAt: Date | null;
+  paymentGatewayInvoiceId: string | null;
+  paymentGatewayInvoiceUrl: string | null;
+  paymentGatewayExpiresAt: Date | null;
+  paymentGatewayRequestId: string | null;
+  paymentMethodType: string | null;
+  paymentChannel: string | null;
+  paymentInstructions: Record<string, unknown> | null;
   paymentProof: string | null;
   deliveredAt: Date | null;
   deliveredById: string | null;
   deliveryNote: string | null;
   couponId: string | null;
+  couponCode?: string | null;
   createdAt: Date;
   updatedAt: Date;
   items?: {
@@ -56,6 +61,9 @@ export interface IOrderRepository extends IBaseRepository<OrderEntity> {
     userId: string,
     params?: { skip?: number; take?: number },
   ): Promise<{ items: OrderEntity[]; total: number }>;
-  findByXenditInvoiceId(invoiceId: string): Promise<OrderEntity | null>;
+  findByPaymentGatewayInvoiceId(invoiceId: string): Promise<OrderEntity | null>;
+  findByPaymentGatewayRequestId(
+    paymentRequestId: string,
+  ): Promise<OrderEntity | null>;
   updateStatus(id: string, status: OrderEntity['status']): Promise<OrderEntity>;
 }

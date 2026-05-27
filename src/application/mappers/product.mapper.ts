@@ -4,9 +4,13 @@ import { ProductResponseDto, ProductVariantResponseDto } from '../dtos';
 
 export class ProductMapper {
   /** Map persisted product data to an application response DTO. */
-  static toResponse(product: ProductEntity): ProductResponseDto {
+  static toResponse(
+    product: ProductEntity,
+    imageUrl?: string | null,
+  ): ProductResponseDto {
     return {
       ...product,
+      imageUrl: imageUrl ?? null,
       variants: product.variants
         ? product.variants.map((v) => ProductMapper.variantToResponse(v))
         : undefined,

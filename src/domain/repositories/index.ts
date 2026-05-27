@@ -21,3 +21,8 @@ export {
   IPointRewardRepository,
   PointRewardEntity,
 } from './point-reward.repository';
+export { IFaqRepository, FaqEntity } from './faq.repository';
+export {
+  IPaymentMethodConfigRepository,
+  PaymentMethodConfigEntity,
+} from './payment-method-config.repository';

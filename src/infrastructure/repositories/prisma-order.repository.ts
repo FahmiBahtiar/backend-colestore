@@ -92,10 +92,28 @@ export class PrismaOrderRepository implements IOrderRepository {
     };
   }
 
-  /** Find an order by Xendit invoice ID */
-  async findByXenditInvoiceId(invoiceId: string): Promise<OrderEntity | null> {
+  /** Find an order by payment gateway invoice ID */
+  async findByPaymentGatewayInvoiceId(
+    invoiceId: string,
+  ): Promise<OrderEntity | null> {
     const order = await this.prisma.order.findFirst({
-      where: { xenditInvoiceId: invoiceId },
+      where: { paymentGatewayInvoiceId: invoiceId },
+      include: {
+        items: {
+          include: { product: true, variant: true, checkoutAnswers: true },
+        },
+        user: { select: { id: true, email: true, name: true } },
+      },
+    });
+    return order ? this.toEntity(order) : null;
+  }
+
+  /** Find an order by payment gateway request ID */
+  async findByPaymentGatewayRequestId(
+    paymentRequestId: string,
+  ): Promise<OrderEntity | null> {
+    const order = await this.prisma.order.findFirst({
+      where: { paymentGatewayRequestId: paymentRequestId },
       include: {
         items: {
           include: { product: true, variant: true, checkoutAnswers: true },
@@ -140,9 +158,13 @@ export class PrismaOrderRepository implements IOrderRepository {
         discountAmount: new Prisma.Decimal(data.discountAmount ?? 0),
         finalAmount: new Prisma.Decimal(data.finalAmount ?? 0),
         status: data.status ?? 'PENDING',
-        xenditInvoiceId: data.xenditInvoiceId,
-        xenditInvoiceUrl: data.xenditInvoiceUrl,
-        xenditInvoiceExpiresAt: data.xenditInvoiceExpiresAt,
+        paymentGatewayInvoiceId: data.paymentGatewayInvoiceId,
+        paymentGatewayInvoiceUrl: data.paymentGatewayInvoiceUrl,
+        paymentGatewayExpiresAt: data.paymentGatewayExpiresAt,
+        paymentGatewayRequestId: data.paymentGatewayRequestId,
+        paymentMethodType: data.paymentMethodType,
+        paymentChannel: data.paymentChannel,
+        paymentInstructions: data.paymentInstructions as Prisma.InputJsonValue,
         couponId: data.couponId,
       },
       include: {
@@ -166,14 +188,27 @@ export class PrismaOrderRepository implements IOrderRepository {
       where: { id },
       data: {
         ...(data.status !== undefined && { status: data.status }),
-        ...(data.xenditInvoiceId !== undefined && {
-          xenditInvoiceId: data.xenditInvoiceId,
+        ...(data.paymentGatewayInvoiceId !== undefined && {
+          paymentGatewayInvoiceId: data.paymentGatewayInvoiceId,
         }),
-        ...(data.xenditInvoiceUrl !== undefined && {
-          xenditInvoiceUrl: data.xenditInvoiceUrl,
+        ...(data.paymentGatewayInvoiceUrl !== undefined && {
+          paymentGatewayInvoiceUrl: data.paymentGatewayInvoiceUrl,
         }),
-        ...(data.xenditInvoiceExpiresAt !== undefined && {
-          xenditInvoiceExpiresAt: data.xenditInvoiceExpiresAt,
+        ...(data.paymentGatewayExpiresAt !== undefined && {
+          paymentGatewayExpiresAt: data.paymentGatewayExpiresAt,
+        }),
+        ...(data.paymentGatewayRequestId !== undefined && {
+          paymentGatewayRequestId: data.paymentGatewayRequestId,
+        }),
+        ...(data.paymentMethodType !== undefined && {
+          paymentMethodType: data.paymentMethodType,
+        }),
+        ...(data.paymentChannel !== undefined && {
+          paymentChannel: data.paymentChannel,
+        }),
+        ...(data.paymentInstructions !== undefined && {
+          paymentInstructions:
+            data.paymentInstructions as Prisma.InputJsonValue,
         }),
         ...(data.paymentProof !== undefined && {
           paymentProof: data.paymentProof,
@@ -218,14 +253,19 @@ export class PrismaOrderRepository implements IOrderRepository {
       discountAmount: Prisma.Decimal;
       finalAmount: Prisma.Decimal;
       status: string;
-      xenditInvoiceId: string | null;
-      xenditInvoiceUrl: string | null;
-      xenditInvoiceExpiresAt: Date | null;
+      paymentGatewayInvoiceId: string | null;
+      paymentGatewayInvoiceUrl: string | null;
+      paymentGatewayExpiresAt: Date | null;
+      paymentGatewayRequestId: string | null;
+      paymentMethodType: string | null;
+      paymentChannel: string | null;
+      paymentInstructions: Prisma.JsonValue | null;
       paymentProof: string | null;
       deliveredAt: Date | null;
       deliveredById: string | null;
       deliveryNote: string | null;
       couponId: string | null;
+      coupon?: { code: string } | null;
       createdAt: Date;
       updatedAt: Date;
       items?: (NonNullable<OrderEntity['items']>[number] & {
@@ -242,14 +282,24 @@ export class PrismaOrderRepository implements IOrderRepository {
       discountAmount: Number(o.discountAmount),
       finalAmount: Number(o.finalAmount),
       status: o.status as OrderEntity['status'],
-      xenditInvoiceId: o.xenditInvoiceId,
-      xenditInvoiceUrl: o.xenditInvoiceUrl,
-      xenditInvoiceExpiresAt: o.xenditInvoiceExpiresAt,
+      paymentGatewayInvoiceId: o.paymentGatewayInvoiceId,
+      paymentGatewayInvoiceUrl: o.paymentGatewayInvoiceUrl,
+      paymentGatewayExpiresAt: o.paymentGatewayExpiresAt,
+      paymentGatewayRequestId: o.paymentGatewayRequestId,
+      paymentMethodType: o.paymentMethodType,
+      paymentChannel: o.paymentChannel,
+      paymentInstructions:
+        o.paymentInstructions &&
+        typeof o.paymentInstructions === 'object' &&
+        !Array.isArray(o.paymentInstructions)
+          ? o.paymentInstructions
+          : null,
       paymentProof: o.paymentProof,
       deliveredAt: o.deliveredAt,
       deliveredById: o.deliveredById,
       deliveryNote: o.deliveryNote,
       couponId: o.couponId,
+      couponCode: o.coupon?.code ?? null,
       createdAt: o.createdAt,
       updatedAt: o.updatedAt,
       items: o.items

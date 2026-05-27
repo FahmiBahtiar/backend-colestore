@@ -1,4 +1,4 @@
 export type {
-  ProcessXenditWebhookInputDto,
-  ProcessXenditWebhookResultDto,
+  ProcessPaymentWebhookInputDto,
+  ProcessPaymentWebhookResultDto,
 } from './payment.dto';

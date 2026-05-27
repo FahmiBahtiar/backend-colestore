@@ -2,20 +2,20 @@ import { forwardRef, Module } from '@nestjs/common';
 import { PAYMENT_GATEWAY } from '../application/interfaces';
 import { QueueModule } from './queue';
 import { PrismaModule } from './prisma';
-import { MinioService, XenditService } from './services';
+import { MinioService, DuitkuService } from './services';
 
 @Module({
   imports: [PrismaModule, forwardRef(() => QueueModule)],
   providers: [
     MinioService,
-    XenditService,
-    { provide: PAYMENT_GATEWAY, useExisting: XenditService },
+    DuitkuService,
+    { provide: PAYMENT_GATEWAY, useExisting: DuitkuService },
   ],
   exports: [
     PrismaModule,
     QueueModule,
     MinioService,
-    XenditService,
+    DuitkuService,
     PAYMENT_GATEWAY,
   ],
 })

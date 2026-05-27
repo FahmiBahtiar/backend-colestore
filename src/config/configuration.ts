@@ -38,10 +38,13 @@ export const jwtConfig = registerAs('jwt', () => ({
   refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
 }));
 
-/** Xendit payment configuration */
-export const xenditConfig = registerAs('xendit', () => ({
-  secretKey: process.env.XENDIT_SECRET_KEY,
-  webhookToken: process.env.XENDIT_WEBHOOK_TOKEN,
+/** Duitku payment configuration */
+export const duitkuConfig = registerAs('duitku', () => ({
+  merchantCode: process.env.DUITKU_MERCHANT_CODE,
+  merchantKey: process.env.DUITKU_MERCHANT_KEY,
+  callbackUrl: process.env.DUITKU_CALLBACK_URL,
+  returnUrl: process.env.DUITKU_RETURN_URL,
+  environment: process.env.DUITKU_ENVIRONMENT || 'sandbox',
 }));
 
 /** Rate limiting configuration */

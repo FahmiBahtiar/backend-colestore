@@ -4,6 +4,6 @@ export {
   redisConfig,
   minioConfig,
   jwtConfig,
-  xenditConfig,
+  duitkuConfig,
   throttleConfig,
 } from './configuration';

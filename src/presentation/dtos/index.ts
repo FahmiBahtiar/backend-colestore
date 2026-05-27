@@ -8,3 +8,5 @@ export * from './order-requests.dto';
 export * from './product-requests.dto';
 export * from './user-requests.dto';
 export * from './points-requests.dto';
+export * from './faq-requests.dto';
+export * from './payment-requests.dto';

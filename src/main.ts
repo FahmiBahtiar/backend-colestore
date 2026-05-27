@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
+import express, { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 
 /**
@@ -32,6 +33,10 @@ async function bootstrap(): Promise<void> {
   // Security headers
   app.use(helmet());
 
+  // Explicitly enable JSON and URL-encoded body parsing
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
   // CORS
   app.enableCors({
     origin: corsOrigin,
@@ -45,6 +50,15 @@ async function bootstrap(): Promise<void> {
 
   // Response compression
   app.use(compression());
+
+  // Log all incoming requests in development/testing only, reusing a single logger instance to prevent overhead
+  if (nodeEnv !== 'production') {
+    const requestLogger = new Logger('IncomingRequest');
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      requestLogger.log(`${req.method} ${req.url}`);
+      next();
+    });
+  }
 
   // Global validation pipe — validates all incoming DTOs
   app.useGlobalPipes(

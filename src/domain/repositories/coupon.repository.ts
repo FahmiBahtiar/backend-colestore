@@ -10,6 +10,7 @@ export interface CouponEntity {
   usedCount: number;
   expiresAt: Date | null;
   isActive: boolean;
+  userId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

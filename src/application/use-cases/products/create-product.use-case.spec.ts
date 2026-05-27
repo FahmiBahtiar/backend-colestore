@@ -4,10 +4,12 @@ import {
   IProductRepository,
   ProductEntity,
 } from '../../../domain/repositories';
+import { MinioService } from '../../../infrastructure/services/minio.service';
 
 describe('CreateProductUseCase', () => {
   const now = new Date('2026-05-23T00:00:00.000Z');
   let repository: jest.Mocked<IProductRepository>;
+  let minioService: jest.Mocked<Pick<MinioService, 'getPresignedUrl'>>;
   let useCase: CreateProductUseCase;
 
   beforeEach(() => {
@@ -20,7 +22,17 @@ describe('CreateProductUseCase', () => {
       findBySlug: jest.fn(),
       findActiveProducts: jest.fn(),
     };
-    useCase = new CreateProductUseCase(repository);
+    minioService = {
+      getPresignedUrl: jest
+        .fn()
+        .mockResolvedValue(
+          'http://localhost:9000/colestore/products/image.png',
+        ),
+    };
+    useCase = new CreateProductUseCase(
+      repository,
+      minioService as jest.Mocked<MinioService>,
+    );
   });
 
   it('creates a product when slug is unique', async () => {
@@ -34,6 +46,7 @@ describe('CreateProductUseCase', () => {
       hasVariants: false,
       stockQuantity: 100,
       digitalFileKey: 'products/icons.zip',
+      imageKey: null,
       categoryId: 'category-1',
       createdById: 'admin-1',
       createdAt: now,
@@ -53,7 +66,7 @@ describe('CreateProductUseCase', () => {
         categoryId: created.categoryId,
         createdById: created.createdById,
       }),
-    ).resolves.toEqual(created);
+    ).resolves.toEqual({ ...created, imageUrl: null });
 
     expect(repository.create.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
@@ -61,6 +74,7 @@ describe('CreateProductUseCase', () => {
         isActive: true,
         hasVariants: false,
         stockQuantity: 100,
+        imageKey: null,
       }),
     );
   });

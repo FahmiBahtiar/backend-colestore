@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsEnum,
+  IsIn,
   IsInt,
   IsNumber,
   IsOptional,
@@ -22,6 +23,13 @@ export class ListPointsQueryDto {
   @IsInt()
   @Min(1)
   take?: number;
+}
+
+export class ListAllPointTransactionsQueryDto extends ListPointsQueryDto {
+  @ApiPropertyOptional({ enum: ['EARNED', 'REFUNDED', 'REDEEMED'] })
+  @IsOptional()
+  @IsIn(['EARNED', 'REFUNDED', 'REDEEMED'])
+  type?: 'EARNED' | 'REFUNDED' | 'REDEEMED';
 }
 
 export class ListPointRewardsQueryDto {
