@@ -9,10 +9,19 @@ export class UpdatePaymentConfigDto {
 
   @ApiPropertyOptional({
     description: 'Payment expiry limit in hours',
-    minimum: 1,
+    minimum: 0,
   })
   @IsOptional()
   @IsInt()
-  @Min(1)
+  @Min(0)
   paymentExpiryHours?: number;
+
+  @ApiPropertyOptional({
+    description: 'Payment expiry limit in minutes',
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  paymentExpiryMinutes?: number;
 }

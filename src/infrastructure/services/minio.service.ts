@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'minio';
+import { Readable } from 'stream';
 
 @Injectable()
 export class MinioService implements OnModuleInit {
@@ -71,11 +72,36 @@ export class MinioService implements OnModuleInit {
     objectKey: string,
     expiryInSeconds = 3600,
   ): Promise<string> {
-    return this.client.presignedGetObject(
+    const apiPublicUrl = this.configService.get<string>('app.apiPublicUrl');
+    if (apiPublicUrl) {
+      return `${apiPublicUrl}/media/${objectKey}`;
+    }
+
+    const url = await this.client.presignedGetObject(
       this.bucketName,
       objectKey,
       expiryInSeconds,
     );
+
+    const publicUrl = this.configService.get<string>('minio.publicUrl');
+    if (publicUrl) {
+      try {
+        const parsedUrl = new URL(url);
+        const parsedPublic = new URL(publicUrl);
+        parsedUrl.protocol = parsedPublic.protocol;
+        parsedUrl.host = parsedPublic.host;
+        return parsedUrl.toString();
+      } catch {
+        return url;
+      }
+    }
+
+    return url;
+  }
+
+  /** Retrieve a readable stream of a stored object. */
+  async getObjectStream(objectKey: string): Promise<Readable> {
+    return this.client.getObject(this.bucketName, objectKey);
   }
 
   /** Delete a stored digital object. */

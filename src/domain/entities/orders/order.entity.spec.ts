@@ -68,6 +68,16 @@ describe('Order entity', () => {
     expect(() => paidOrder.cancel()).toThrow(DomainError);
   });
 
+  it('allows transitioning from CANCELLED to PAID', () => {
+    const order = makeOrder();
+    order.cancel();
+    expect(order.status).toBe('CANCELLED');
+
+    order.markPaid('paid-proof');
+    expect(order.status).toBe('PAID');
+    expect(order.toPrimitives().paymentProof).toBe('paid-proof');
+  });
+
   it('refunds only paid, processing, or delivered orders', () => {
     const paidOrder = makeOrder({ status: 'PAID' });
 

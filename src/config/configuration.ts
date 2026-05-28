@@ -6,6 +6,9 @@ export const appConfig = registerAs('app', () => ({
   port: parseInt(process.env.PORT || '3001', 10),
   apiPrefix: process.env.API_PREFIX || 'api/v1',
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  apiPublicUrl:
+    process.env.API_PUBLIC_URL ||
+    `http://localhost:3001/${process.env.API_PREFIX || 'api/v1'}`,
 }));
 
 /** Database (PostgreSQL) configuration */
@@ -28,6 +31,7 @@ export const minioConfig = registerAs('minio', () => ({
   accessKey: process.env.MINIO_ROOT_USER,
   secretKey: process.env.MINIO_ROOT_PASSWORD,
   bucketName: process.env.MINIO_BUCKET_NAME || 'colestore',
+  publicUrl: process.env.MINIO_PUBLIC_URL,
 }));
 
 /** JWT authentication configuration */

@@ -33,8 +33,9 @@ const PAYMENT_METHODS: PaymentMethodOption[] = [
     channel: 'PERMATA',
     name: 'Permata Virtual Account',
   },
-  // QRIS
-  { type: 'QR_CODE', channel: 'QRIS', name: 'QRIS' },
+  // QRIS – uses GQ (Gudang Voucher) acquirer code, testable via sandbox demo page.
+  // QRIS is a universal standard: the generated QR can be scanned by any app.
+  { type: 'QR_CODE', channel: 'GQ', name: 'QRIS' },
   // E-Wallets
   { type: 'EWALLET', channel: 'OVO', name: 'OVO' },
   { type: 'EWALLET', channel: 'DANA', name: 'DANA' },
@@ -98,7 +99,8 @@ export class DuitkuService implements IPaymentGatewayPort {
           return 'BC';
       }
     } else if (type === 'QR_CODE') {
-      return 'DQ'; // Duitku QRIS / Shopee QRIS
+      // QRIS channels use their Duitku code directly (GQ, SP, NQ, SQ)
+      return code;
     } else if (type === 'EWALLET') {
       switch (code) {
         case 'OVO':
@@ -116,12 +118,22 @@ export class DuitkuService implements IPaymentGatewayPort {
     return 'BC';
   }
 
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
   /**
-   * Helper to compute signature MD5
+   * Compute HMAC-SHA256 signature for Duitku V2 API.
+   * stringToSign = merchantCode + merchantOrderId + paymentAmount
+   * signature = HMAC_SHA256(stringToSign, merchantKey)
    */
   private computeSignature(orderId: string, amount: number): string {
-    const payload = `${this.merchantCode}${orderId}${amount}${this.merchantKey}`;
-    return crypto.createHash('md5').update(payload).digest('hex');
+    const stringToSign = `${this.merchantCode}${orderId}${amount}`;
+    return crypto
+      .createHmac('sha256', this.merchantKey)
+      .update(stringToSign)
+      .digest('hex');
   }
 
   /**
@@ -179,11 +191,18 @@ export class DuitkuService implements IPaymentGatewayPort {
       merchantOrderId: input.orderId,
       productDetails,
       additionalParam: input.orderId,
-      merchantUserInfo: input.payerEmail || 'ColeStore Customer',
-      customerVaName: input.payerEmail
-        ? input.payerEmail.split('@')[0]
-        : 'ColeStore VA',
-      email: input.payerEmail || 'customer@colestore.com',
+      merchantUserInfo:
+        input.payerEmail && this.isValidEmail(input.payerEmail.trim())
+          ? input.payerEmail.trim()
+          : 'customer@colestore.com',
+      customerVaName:
+        input.payerEmail && this.isValidEmail(input.payerEmail.trim())
+          ? input.payerEmail.trim().split('@')[0]
+          : 'ColeStore VA',
+      email:
+        input.payerEmail && this.isValidEmail(input.payerEmail.trim())
+          ? input.payerEmail.trim()
+          : 'customer@colestore.com',
       phoneNumber: input.payerPhone
         ? input.payerPhone.replace(/\D/g, '')
         : '081234567890',
@@ -213,9 +232,21 @@ export class DuitkuService implements IPaymentGatewayPort {
         this.logger.error(
           `Duitku Inquiry V2 API HTTP Error: ${response.status} - ${errorText}`,
         );
-        throw new BadRequestException(
-          `HTTP Error from Duitku: ${response.status}`,
-        );
+
+        let detailedMessage = '';
+        try {
+          const parsed = JSON.parse(errorText);
+          detailedMessage =
+            parsed.Message || parsed.message || parsed.statusMessage || '';
+        } catch (e) {
+          // Response body is not a JSON object, or doesn't have standard fields
+        }
+
+        const errMsg = detailedMessage
+          ? `HTTP Error from Duitku: ${response.status} - ${detailedMessage}`
+          : `HTTP Error from Duitku: ${response.status}`;
+
+        throw new BadRequestException(errMsg);
       }
 
       const resBody = (await response.json()) as {
@@ -301,12 +332,13 @@ export class DuitkuService implements IPaymentGatewayPort {
       throw new BadRequestException('Invalid callback webhook payload fields');
     }
 
-    // Verify signature callback MD5
-    // MD5(merchantCode + amount + merchantOrderId + merchantKey)
-    const expectedPayload = `${merchantCode}${amount}${merchantOrderId}${this.merchantKey}`;
+    // Verify signature callback HMAC-SHA256 (V2 API)
+    // stringToSign = merchantCode + amount + merchantOrderId
+    // signature = HMAC_SHA256(stringToSign, merchantKey)
+    const stringToSign = `${merchantCode}${amount}${merchantOrderId}`;
     const calculatedSignature = crypto
-      .createHash('md5')
-      .update(expectedPayload)
+      .createHmac('sha256', this.merchantKey)
+      .update(stringToSign)
       .digest('hex');
 
     if (calculatedSignature !== signature) {

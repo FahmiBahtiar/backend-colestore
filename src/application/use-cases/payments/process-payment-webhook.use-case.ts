@@ -7,7 +7,6 @@ import {
   ProcessPaymentWebhookResultDto,
 } from '../../dtos';
 import { IPaymentGatewayPort, PAYMENT_GATEWAY } from '../../interfaces';
-import { AwardOrderPointsUseCase } from '../points/award-order-points.use-case';
 import { paymentEvents } from '../../interfaces/payment-events';
 
 @Injectable()
@@ -19,7 +18,6 @@ export class ProcessPaymentWebhookUseCase {
     private readonly orderRepository: IOrderRepository,
     @Inject(PAYMENT_GATEWAY)
     private readonly paymentGateway: IPaymentGatewayPort,
-    private readonly awardOrderPointsUseCase: AwardOrderPointsUseCase,
   ) {}
 
   /** Process a trusted payment webhook payload and update order payment status.
@@ -55,8 +53,8 @@ export class ProcessPaymentWebhookUseCase {
 
     const order = Order.create(orderRecord);
 
-    // Idempotency: if order is already in a terminal state, skip processing
-    if (order.status !== 'PENDING') {
+    // Idempotency: if order is already in a terminal state (except CANCELLED if payment succeeds), skip processing
+    if (order.status !== 'PENDING' && order.status !== 'CANCELLED') {
       this.logger.log(
         `Order ${order.id} already in status ${order.status}, skipping webhook`,
       );
@@ -65,9 +63,15 @@ export class ProcessPaymentWebhookUseCase {
 
     if (webhook.status === 'PAID') {
       order.markPaid(webhook.paymentProof ?? null);
-    } else if (webhook.status === 'EXPIRED' || webhook.status === 'FAILED') {
+    } else if (
+      order.status === 'PENDING' &&
+      (webhook.status === 'EXPIRED' || webhook.status === 'FAILED')
+    ) {
       order.cancel();
     } else {
+      this.logger.log(
+        `Order ${order.id} is in status ${order.status} and webhook status is ${webhook.status}, skipping further updates.`,
+      );
       return { orderId: order.id, status: order.status, processed: false };
     }
 
@@ -77,8 +81,6 @@ export class ProcessPaymentWebhookUseCase {
     });
 
     if (webhook.status === 'PAID') {
-      await this.awardOrderPointsUseCase.execute(updated);
-
       // Emit the payment success event to update connected WebSocket clients in real-time
       paymentEvents.emit('payment_status_changed', {
         orderId: updated.id,

@@ -5,7 +5,6 @@ import { ORDER_REPOSITORY } from '../../../domain/repositories/tokens';
 import { OrderResponseDto } from '../../dtos';
 import { OrderMapper } from '../../mappers';
 import { IPaymentGatewayPort, PAYMENT_GATEWAY } from '../../interfaces';
-import { AwardOrderPointsUseCase } from '../points/award-order-points.use-case';
 import { paymentEvents } from '../../interfaces/payment-events';
 
 @Injectable()
@@ -20,7 +19,6 @@ export class GetOrderDetailUseCase {
     private readonly orderRepository: IOrderRepository,
     @Inject(PAYMENT_GATEWAY)
     private readonly paymentGateway: IPaymentGatewayPort,
-    private readonly awardOrderPointsUseCase: AwardOrderPointsUseCase,
   ) {}
 
   /** Retrieve one order by id. */
@@ -30,30 +28,69 @@ export class GetOrderDetailUseCase {
       throw new NotFoundException('Order not found');
     }
 
-    // Auto-cancel if the payment expiration time has passed
+    // Auto-cancel if the payment expiration time has passed (with a 5-minute grace period and gateway double-check)
     const now = Date.now();
+    const gracePeriodMs = 5 * 60 * 1000; // 5 minutes grace period
     if (
       order.status === 'PENDING' &&
       order.paymentGatewayExpiresAt &&
-      now > new Date(order.paymentGatewayExpiresAt).getTime()
+      now > new Date(order.paymentGatewayExpiresAt).getTime() + gracePeriodMs
     ) {
-      this.logger.log(
-        `Order ${order.id} payment expired, automatically updating status to CANCELLED...`,
-      );
-      const orderEntity = Order.create(order);
-      orderEntity.cancel();
+      // First, double check with the payment gateway before cancelling
+      let isActuallyPaid = false;
+      if (this.paymentGateway.checkTransactionStatus) {
+        try {
+          const checkResult = await this.paymentGateway.checkTransactionStatus(
+            order.id,
+          );
+          if (checkResult.status === 'PAID') {
+            isActuallyPaid = true;
+            this.logger.log(
+              `Expiration check: Order ${order.id} detected as PAID via Duitku inquiry, marking PAID instead of cancelling...`,
+            );
 
-      const updated = await this.orderRepository.update(order.id, {
-        status: 'CANCELLED',
-      });
+            const orderEntity = Order.create(order);
+            orderEntity.markPaid(checkResult.paymentProof ?? null);
 
-      // Emit WebSocket event to update connected clients in real-time
-      paymentEvents.emit('payment_status_changed', {
-        orderId: order.id,
-        status: 'CANCELLED',
-      });
+            const updated = await this.orderRepository.update(order.id, {
+              status: orderEntity.toPrimitives().status,
+              paymentProof: orderEntity.toPrimitives().paymentProof,
+            });
 
-      return OrderMapper.toResponse(updated);
+            // Emit the payment success event to update connected WebSocket clients in real-time
+            paymentEvents.emit('payment_status_changed', {
+              orderId: order.id,
+              status: 'PAID',
+            });
+
+            return OrderMapper.toResponse(updated);
+          }
+        } catch (err) {
+          this.logger.error(
+            `Failed to double-check transaction status on expiration for order ${order.id}: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
+
+      if (!isActuallyPaid) {
+        this.logger.log(
+          `Order ${order.id} payment expired (grace period passed and double-checked), automatically updating status to CANCELLED...`,
+        );
+        const orderEntity = Order.create(order);
+        orderEntity.cancel();
+
+        const updated = await this.orderRepository.update(order.id, {
+          status: 'CANCELLED',
+        });
+
+        // Emit WebSocket event to update connected clients in real-time
+        paymentEvents.emit('payment_status_changed', {
+          orderId: order.id,
+          status: 'CANCELLED',
+        });
+
+        return OrderMapper.toResponse(updated);
+      }
     }
 
     // Active polling/pulling: Check transaction status directly with Duitku
@@ -91,8 +128,6 @@ export class GetOrderDetailUseCase {
             status: orderEntity.toPrimitives().status,
             paymentProof: orderEntity.toPrimitives().paymentProof,
           });
-
-          await this.awardOrderPointsUseCase.execute(updated);
 
           // Emit the payment success event to update connected WebSocket clients in real-time
           paymentEvents.emit('payment_status_changed', {

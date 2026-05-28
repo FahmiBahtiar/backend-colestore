@@ -38,7 +38,10 @@ export class PrismaPaymentMethodConfigRepository implements IPaymentMethodConfig
   async update(
     id: string,
     data: Partial<
-      Pick<PaymentMethodConfigEntity, 'isActive' | 'paymentExpiryHours'>
+      Pick<
+        PaymentMethodConfigEntity,
+        'isActive' | 'paymentExpiryHours' | 'paymentExpiryMinutes'
+      >
     >,
   ): Promise<PaymentMethodConfigEntity> {
     const existing = await this.prisma.paymentMethodConfig.findUnique({
@@ -55,6 +58,9 @@ export class PrismaPaymentMethodConfigRepository implements IPaymentMethodConfig
         ...(data.paymentExpiryHours !== undefined && {
           paymentExpiryHours: data.paymentExpiryHours,
         }),
+        ...(data.paymentExpiryMinutes !== undefined && {
+          paymentExpiryMinutes: data.paymentExpiryMinutes,
+        }),
       },
     });
     return this.toEntity(record);
@@ -67,6 +73,7 @@ export class PrismaPaymentMethodConfigRepository implements IPaymentMethodConfig
     name: string;
     isActive: boolean;
     paymentExpiryHours: number;
+    paymentExpiryMinutes: number;
     createdAt: Date;
     updatedAt: Date;
   }): PaymentMethodConfigEntity {
@@ -77,6 +84,7 @@ export class PrismaPaymentMethodConfigRepository implements IPaymentMethodConfig
       name: r.name,
       isActive: r.isActive,
       paymentExpiryHours: r.paymentExpiryHours,
+      paymentExpiryMinutes: r.paymentExpiryMinutes,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
     };

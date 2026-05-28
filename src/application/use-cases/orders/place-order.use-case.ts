@@ -15,6 +15,7 @@ import {
   ICouponRepository,
   IOrderRepository,
   IProductRepository,
+  IUserRepository,
   OrderEntity,
 } from '../../../domain/repositories';
 import {
@@ -24,6 +25,7 @@ import {
   PRODUCT_REPOSITORY,
   PRODUCT_VARIANT_REPOSITORY,
   PAYMENT_METHOD_CONFIG_REPOSITORY,
+  USER_REPOSITORY,
 } from '../../../domain/repositories/tokens';
 import { IPaymentMethodConfigRepository } from '../../../domain/repositories/payment-method-config.repository';
 import {
@@ -54,6 +56,8 @@ export class PlaceOrderUseCase {
     private readonly configRepository: IPaymentMethodConfigRepository,
     @Inject(PAYMENT_GATEWAY)
     private readonly paymentGateway: IPaymentGatewayPort,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: IUserRepository,
   ) {}
 
   /** Place an order, apply coupon rules, and request a payment via custom checkout. */
@@ -153,9 +157,19 @@ export class PlaceOrderUseCase {
     const finalAmount = totalAmount - discountAmount;
     const now = new Date();
 
+    let userId = input.userId ?? null;
+    if (!userId && input.customerEmail) {
+      const user = await this.userRepository.findByEmail(
+        input.customerEmail.toLowerCase().trim(),
+      );
+      if (user) {
+        userId = user.id;
+      }
+    }
+
     const order = Order.create({
       id: 'new-order',
-      userId: input.userId ?? null,
+      userId,
       customerEmail: input.customerEmail,
       customerWhatsapp: input.customerWhatsapp,
       totalAmount,
@@ -202,7 +216,9 @@ export class PlaceOrderUseCase {
       input.paymentMethodType,
       input.paymentChannel,
     );
-    const expiryMinutes = (config?.paymentExpiryHours ?? 24) * 60;
+    const configHours = config?.paymentExpiryHours ?? 24;
+    const configMinutes = config?.paymentExpiryMinutes ?? 0;
+    const expiryMinutes = configHours * 60 + configMinutes;
 
     // Custom checkout: create Payment Request via active PAYMENT_GATEWAY
     const paymentResult = await this.paymentGateway.createPaymentRequest({

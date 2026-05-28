@@ -5,6 +5,7 @@ export interface PaymentMethodConfigEntity {
   name: string;
   isActive: boolean;
   paymentExpiryHours: number;
+  paymentExpiryMinutes: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,7 +20,10 @@ export interface IPaymentMethodConfigRepository {
   update(
     id: string,
     data: Partial<
-      Pick<PaymentMethodConfigEntity, 'isActive' | 'paymentExpiryHours'>
+      Pick<
+        PaymentMethodConfigEntity,
+        'isActive' | 'paymentExpiryHours' | 'paymentExpiryMinutes'
+      >
     >,
   ): Promise<PaymentMethodConfigEntity>;
 }

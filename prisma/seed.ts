@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as dotenv from 'dotenv';
@@ -48,8 +47,13 @@ async function main() {
       name: 'Permata Virtual Account',
       paymentExpiryHours: 24,
     },
-    // QRIS (Default 1 hour expiry)
-    { type: 'QR_CODE', channel: 'QRIS', name: 'QRIS', paymentExpiryHours: 1 },
+    // QRIS (Default 1 hour expiry) — uses GQ acquirer, testable via sandbox demo page
+    {
+      type: 'QR_CODE',
+      channel: 'GQ',
+      name: 'QRIS (Gudang Voucher)',
+      paymentExpiryHours: 1,
+    },
     // E-Wallets (Default 1 hour expiry)
     { type: 'EWALLET', channel: 'OVO', name: 'OVO', paymentExpiryHours: 1 },
     { type: 'EWALLET', channel: 'DANA', name: 'DANA', paymentExpiryHours: 1 },
@@ -66,6 +70,16 @@ async function main() {
       paymentExpiryHours: 1,
     },
   ];
+
+  // Clean up any stale configs from previous iterations
+  const activeChannels = configs.map((c) => c.channel);
+  await prisma.paymentMethodConfig.deleteMany({
+    where: {
+      channel: {
+        notIn: activeChannels,
+      },
+    },
+  });
 
   for (const config of configs) {
     await prisma.paymentMethodConfig.upsert({

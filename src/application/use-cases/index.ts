@@ -9,3 +9,4 @@ export * from './products';
 export * from './users';
 export * from './points';
 export * from './faqs';
+export * from './banners';

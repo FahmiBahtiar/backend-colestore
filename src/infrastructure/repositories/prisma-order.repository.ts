@@ -24,6 +24,7 @@ export class PrismaOrderRepository implements IOrderRepository {
     },
     user: { select: { id: true, email: true, name: true } },
     coupon: true,
+    deliveredBy: { select: { id: true, email: true, name: true } },
   } satisfies Prisma.OrderInclude;
 
   /** Find an order by ID with relations */
@@ -32,7 +33,24 @@ export class PrismaOrderRepository implements IOrderRepository {
       where: { id },
       include: PrismaOrderRepository.orderInclude,
     });
-    return order ? this.toEntity(order) : null;
+    if (!order) return null;
+
+    if (!order.userId && order.customerEmail) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: order.customerEmail.toLowerCase().trim() },
+        select: { id: true, email: true, name: true },
+      });
+      if (existingUser) {
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { userId: existingUser.id },
+        });
+        order.userId = existingUser.id;
+        (order as unknown as { user: typeof existingUser }).user = existingUser;
+      }
+    }
+
+    return this.toEntity(order);
   }
 
   /** Find all orders with pagination */
@@ -105,7 +123,24 @@ export class PrismaOrderRepository implements IOrderRepository {
         user: { select: { id: true, email: true, name: true } },
       },
     });
-    return order ? this.toEntity(order) : null;
+    if (!order) return null;
+
+    if (!order.userId && order.customerEmail) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: order.customerEmail.toLowerCase().trim() },
+        select: { id: true, email: true, name: true },
+      });
+      if (existingUser) {
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { userId: existingUser.id },
+        });
+        order.userId = existingUser.id;
+        (order as unknown as { user: typeof existingUser }).user = existingUser;
+      }
+    }
+
+    return this.toEntity(order);
   }
 
   /** Find an order by payment gateway request ID */
@@ -121,7 +156,24 @@ export class PrismaOrderRepository implements IOrderRepository {
         user: { select: { id: true, email: true, name: true } },
       },
     });
-    return order ? this.toEntity(order) : null;
+    if (!order) return null;
+
+    if (!order.userId && order.customerEmail) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: order.customerEmail.toLowerCase().trim() },
+        select: { id: true, email: true, name: true },
+      });
+      if (existingUser) {
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { userId: existingUser.id },
+        });
+        order.userId = existingUser.id;
+        (order as unknown as { user: typeof existingUser }).user = existingUser;
+      }
+    }
+
+    return this.toEntity(order);
   }
 
   /** Update order status */
@@ -223,12 +275,7 @@ export class PrismaOrderRepository implements IOrderRepository {
           deliveryNote: data.deliveryNote,
         }),
       },
-      include: {
-        items: {
-          include: { product: true, variant: true, checkoutAnswers: true },
-        },
-        user: { select: { id: true, email: true, name: true } },
-      },
+      include: PrismaOrderRepository.orderInclude,
     });
     return this.toEntity(order);
   }
@@ -244,6 +291,10 @@ export class PrismaOrderRepository implements IOrderRepository {
 
   /** Map Prisma Order to domain entity */
   private toEntity(order: Record<string, unknown>): OrderEntity {
+    const dbOrder = order as {
+      user?: { id: string; email: string; name: string } | null;
+      deliveredBy?: { id: string; email: string; name: string } | null;
+    };
     const o = order as {
       id: string;
       userId: string | null;
@@ -297,6 +348,20 @@ export class PrismaOrderRepository implements IOrderRepository {
       paymentProof: o.paymentProof,
       deliveredAt: o.deliveredAt,
       deliveredById: o.deliveredById,
+      deliveredBy: dbOrder.deliveredBy
+        ? {
+            id: dbOrder.deliveredBy.id,
+            email: dbOrder.deliveredBy.email,
+            name: dbOrder.deliveredBy.name,
+          }
+        : null,
+      user: dbOrder.user
+        ? {
+            id: dbOrder.user.id,
+            email: dbOrder.user.email,
+            name: dbOrder.user.name,
+          }
+        : null,
       deliveryNote: o.deliveryNote,
       couponId: o.couponId,
       couponCode: o.coupon?.code ?? null,

@@ -16,7 +16,10 @@ import {
   PointsController,
   PointRewardsController,
   FaqsController,
+  BannersController,
+  MediaController,
 } from './controllers';
+
 import { JwtStrategy } from './strategies';
 import { OrdersGateway } from './gateways/orders.gateway';
 
@@ -40,8 +43,11 @@ import { OrdersGateway } from './gateways/orders.gateway';
     PointsController,
     PointRewardsController,
     FaqsController,
+    BannersController,
+    MediaController,
   ],
   providers: [JwtStrategy, OrdersGateway],
+
   exports: [PassportModule],
 })
 export class PresentationModule {}

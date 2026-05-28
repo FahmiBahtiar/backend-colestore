@@ -1,14 +1,18 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
 import { ICategoryRepository } from '../../../domain/repositories';
 import { CATEGORY_REPOSITORY } from '../../../domain/repositories/tokens';
 import { CategoryResponseDto, CreateCategoryInputDto } from '../../dtos';
 import { CategoryMapper } from '../../mappers';
+import { MinioService } from '../../../infrastructure/services/minio.service';
 
 @Injectable()
 export class CreateCategoryUseCase {
+  private readonly logger = new Logger(CreateCategoryUseCase.name);
+
   constructor(
     @Inject(CATEGORY_REPOSITORY)
     private readonly categoryRepository: ICategoryRepository,
+    private readonly minioService: MinioService,
   ) {}
 
   /** Create a category after enforcing unique slug. */
@@ -19,6 +23,20 @@ export class CreateCategoryUseCase {
     }
 
     const category = await this.categoryRepository.create(input);
-    return CategoryMapper.toResponse(category);
+
+    let imageUrl: string | null = null;
+    if (category.imageKey) {
+      try {
+        imageUrl = await this.minioService.getPresignedUrl(category.imageKey);
+      } catch (err) {
+        const error = err as Error;
+        this.logger.error(
+          `Failed to resolve presigned URL for category image ${category.imageKey}: ${error.message}`,
+          error.stack,
+        );
+      }
+    }
+
+    return CategoryMapper.toResponse(category, imageUrl);
   }
 }

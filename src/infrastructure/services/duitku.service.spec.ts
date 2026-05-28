@@ -57,16 +57,20 @@ describe('DuitkuService', () => {
       expect((service as any).mapChannel('EWALLET', 'SHOPEEPAY')).toBe('SA');
       expect((service as any).mapChannel('EWALLET', 'LINKAJA')).toBe('LA');
     });
+
+    it('should pass through QRIS code directly to Duitku', () => {
+      expect((service as any).mapChannel('QR_CODE', 'GQ')).toBe('GQ');
+    });
   });
 
   describe('signature calculation', () => {
-    it('should correctly compute MD5 signature for Inquiry', () => {
+    it('should correctly compute HMAC-SHA256 signature for Inquiry', () => {
       const orderId = 'order-123';
       const amount = 150000;
-      const expectedPayload = `${mockConfig.merchantCode}${orderId}${amount}${mockConfig.merchantKey}`;
+      const stringToSign = `${mockConfig.merchantCode}${orderId}${amount}`;
       const expectedHash = crypto
-        .createHash('md5')
-        .update(expectedPayload)
+        .createHmac('sha256', mockConfig.merchantKey)
+        .update(stringToSign)
         .digest('hex');
 
       const computed = (service as any).computeSignature(orderId, amount);
@@ -80,11 +84,11 @@ describe('DuitkuService', () => {
       const amount = 250000;
       const reference = 'DUITKUREF123';
 
-      // MD5(merchantCode + amount + merchantOrderId + merchantKey)
-      const signaturePayload = `${mockConfig.merchantCode}${amount}${orderId}${mockConfig.merchantKey}`;
+      // HMAC-SHA256(merchantCode + amount + merchantOrderId, merchantKey)
+      const stringToSign = `${mockConfig.merchantCode}${amount}${orderId}`;
       const validSignature = crypto
-        .createHash('md5')
-        .update(signaturePayload)
+        .createHmac('sha256', mockConfig.merchantKey)
+        .update(stringToSign)
         .digest('hex');
 
       const payload = {

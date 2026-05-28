@@ -11,3 +11,5 @@ export { UsersController } from './users.controller';
 export { PointsController } from './points.controller';
 export { PointRewardsController } from './point-rewards.controller';
 export { FaqsController } from './faqs.controller';
+export { BannersController } from './banners.controller';
+export { MediaController } from './media.controller';

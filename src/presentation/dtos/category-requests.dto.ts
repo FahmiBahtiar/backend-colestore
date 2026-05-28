@@ -12,6 +12,11 @@ export class CreateCategoryRequestDto {
   @IsString()
   @MinLength(2)
   slug?: string;
+
+  @ApiPropertyOptional({ example: 'categories/unique-image-key.jpg' })
+  @IsOptional()
+  @IsString()
+  imageKey?: string;
 }
 
 export class UpdateCategoryRequestDto {
@@ -26,6 +31,11 @@ export class UpdateCategoryRequestDto {
   @IsString()
   @MinLength(2)
   slug?: string;
+
+  @ApiPropertyOptional({ example: 'categories/unique-image-key.jpg' })
+  @IsOptional()
+  @IsString()
+  imageKey?: string;
 }
 
 export class ListCategoriesQueryDto {

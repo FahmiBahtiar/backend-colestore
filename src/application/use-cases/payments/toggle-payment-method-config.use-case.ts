@@ -8,6 +8,7 @@ import { PAYMENT_METHOD_CONFIG_REPOSITORY } from '../../../domain/repositories/t
 export interface TogglePaymentMethodConfigInput {
   isActive?: boolean;
   paymentExpiryHours?: number;
+  paymentExpiryMinutes?: number;
 }
 
 @Injectable()

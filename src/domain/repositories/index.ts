@@ -26,3 +26,4 @@ export {
   IPaymentMethodConfigRepository,
   PaymentMethodConfigEntity,
 } from './payment-method-config.repository';
+export { IBannerRepository, BannerEntity } from './banner.repository';

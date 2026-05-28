@@ -6,215 +6,156 @@ datasource db {
   provider = "postgresql"
 }
 
-// ============================================================
-// USER & AUTHENTICATION
-// ============================================================
-
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      Role     @default(BUYER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  orders            Order[]
+  id                String             @id @default(cuid())
+  email             String             @unique
+  password          String
+  name              String?
+  role              Role               @default(BUYER)
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   activityLogs      ActivityLog[]      @relation("ActorLogs")
-  createdProducts   Product[]          @relation("CreatedByAdmin")
-  deliveredOrders   Order[]            @relation("DeliveredBy")
-  pointTransactions PointTransaction[]
   coupons           Coupon[]           @relation("UserCoupons")
+  deliveredOrders   Order[]            @relation("DeliveredBy")
+  orders            Order[]
+  pointTransactions PointTransaction[]
+  createdProducts   Product[]          @relation("CreatedByAdmin")
 
   @@map("users")
 }
 
-enum Role {
-  ADMIN
-  BUYER
-}
-
-// ============================================================
-// PRODUCT & CATEGORY
-// ============================================================
-
 model Category {
-  id   String @id @default(cuid())
-  name String @unique
-  slug String @unique
-
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  imageKey String?
   products Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id             String   @id @default(cuid())
+  id             String                 @id @default(cuid())
   name           String
-  slug           String   @unique
+  slug           String                 @unique
   description    String?
   basePrice      Decimal
-  isActive       Boolean  @default(true)
-  hasVariants    Boolean  @default(false)
+  isActive       Boolean                @default(true)
+  hasVariants    Boolean                @default(false)
   stockQuantity  Int?
   digitalFileKey String?
   imageKey       String?
-
-  categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id])
-
-  createdById String
-  createdBy   User   @relation("CreatedByAdmin", fields: [createdById], references: [id])
-
-  variants   ProductVariant[]
-  orderItems OrderItem[]
+  categoryId     String?
+  createdById    String
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  orderItems     OrderItem[]
   checkoutFields ProductCheckoutField[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  variants       ProductVariant[]
+  category       Category?              @relation(fields: [categoryId], references: [id])
+  createdBy      User                   @relation("CreatedByAdmin", fields: [createdById], references: [id])
 
   @@map("products")
 }
 
 model ProductVariant {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   name          String
   price         Decimal?
   stockQuantity Int?
-
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  orderItems OrderItem[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  productId     String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  orderItems    OrderItem[]
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_variants")
 }
 
-// ============================================================
-// COUPON / VOUCHER
-// ============================================================
-
 model Coupon {
-  id             String       @id @default(cuid())
-  code           String       @unique
-  discountType   DiscountType
-  discountValue  Decimal
-  minOrderAmount Decimal      @default(0)
-  maxUses        Int?
-  usedCount      Int          @default(0)
-  expiresAt      DateTime?
-  isActive       Boolean      @default(true)
-
-  appliedOrders Order[]
-  orderItems    OrderItem[]
-
-  userId         String?
-  user           User?        @relation("UserCoupons", fields: [userId], references: [id])
-
+  id                String             @id @default(cuid())
+  code              String             @unique
+  discountType      DiscountType
+  discountValue     Decimal
+  minOrderAmount    Decimal            @default(0)
+  maxUses           Int?
+  usedCount         Int                @default(0)
+  expiresAt         DateTime?
+  isActive          Boolean            @default(true)
+  userId            String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User?              @relation("UserCoupons", fields: [userId], references: [id])
+  orderItems        OrderItem[]
+  appliedOrders     Order[]
   pointTransactions PointTransaction[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@map("coupons")
 }
 
-enum DiscountType {
-  PERCENTAGE
-  FIXED
-}
-
-// ============================================================
-// ORDER & PAYMENT
-// ============================================================
-
 model Order {
-  id               String      @id @default(cuid())
-  userId           String?
-  user             User?       @relation(fields: [userId], references: [id])
-  customerEmail    String      @default("")
-  customerWhatsapp String      @default("")
-
-  totalAmount    Decimal
-  discountAmount Decimal     @default(0)
-  finalAmount    Decimal
-
-  status           OrderStatus @default(PENDING)
+  id                       String             @id @default(cuid())
+  userId                   String?
+  customerEmail            String             @default("")
+  customerWhatsapp         String             @default("")
+  totalAmount              Decimal
+  discountAmount           Decimal            @default(0)
+  finalAmount              Decimal
+  status                   OrderStatus        @default(PENDING)
   paymentGatewayInvoiceId  String?
   paymentGatewayInvoiceUrl String?
-  paymentGatewayExpiresAt DateTime?
-  paymentGatewayRequestId String?
-  paymentMethodType      String?
-  paymentChannel         String?
-  paymentInstructions    Json?
-  paymentProof     String?
-
-  deliveredAt   DateTime?
-  deliveredById String?
-  deliveredBy   User?    @relation("DeliveredBy", fields: [deliveredById], references: [id])
-  deliveryNote  String?
-
-  couponId String?
-  coupon   Coupon? @relation(fields: [couponId], references: [id])
-
-  items             OrderItem[]
-  activityLogs      ActivityLog[] @relation("OrderLogs")
-  pointTransactions PointTransaction[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  paymentGatewayExpiresAt  DateTime?
+  paymentGatewayRequestId  String?
+  paymentMethodType        String?
+  paymentChannel           String?
+  paymentInstructions      Json?
+  paymentProof             String?
+  deliveredAt              DateTime?
+  deliveredById            String?
+  deliveryNote             String?
+  couponId                 String?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  activityLogs             ActivityLog[]      @relation("OrderLogs")
+  items                    OrderItem[]
+  coupon                   Coupon?            @relation(fields: [couponId], references: [id])
+  deliveredBy              User?              @relation("DeliveredBy", fields: [deliveredById], references: [id])
+  user                     User?              @relation(fields: [userId], references: [id])
+  pointTransactions        PointTransaction[]
 
   @@index([paymentGatewayRequestId])
   @@map("orders")
 }
 
-enum OrderStatus {
-  PENDING
-  PAID
-  PROCESSING
-  DELIVERED
-  CANCELLED
-  REFUNDED
-}
-
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-
-  variantId String?
-  variant   ProductVariant? @relation(fields: [variantId], references: [id])
-
-  couponId  String?
-  coupon    Coupon? @relation(fields: [couponId], references: [id])
-
-  quantity  Int     @default(1)
-  unitPrice Decimal
-  subtotal  Decimal
-
+  id              String                    @id @default(cuid())
+  orderId         String
+  productId       String
+  variantId       String?
+  couponId        String?
+  quantity        Int                       @default(1)
+  unitPrice       Decimal
+  subtotal        Decimal
   checkoutAnswers OrderItemCheckoutAnswer[]
+  coupon          Coupon?                   @relation(fields: [couponId], references: [id])
+  order           Order                     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product                   @relation(fields: [productId], references: [id])
+  variant         ProductVariant?           @relation(fields: [variantId], references: [id])
 
   @@map("order_items")
 }
 
 model ProductCheckoutField {
-  id         String   @id @default(cuid())
+  id         String                    @id @default(cuid())
   productId  String
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   label      String
-  type       String   @default("TEXT") // TEXT, TEXTAREA
-  isRequired Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
+  type       String                    @default("TEXT")
+  isRequired Boolean                   @default(true)
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
   answers    OrderItemCheckoutAnswer[]
+  product    Product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_checkout_fields")
 }
@@ -222,20 +163,16 @@ model ProductCheckoutField {
 model OrderItemCheckoutAnswer {
   id              String                @id @default(cuid())
   orderItemId     String
-  orderItem       OrderItem             @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
   checkoutFieldId String?
-  checkoutField   ProductCheckoutField? @relation(fields: [checkoutFieldId], references: [id], onDelete: SetNull)
-  label           String                // Snapshot of the field label at purchase time
-  value           String                // Buyer response/answer value
+  label           String
+  value           String
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
+  checkoutField   ProductCheckoutField? @relation(fields: [checkoutFieldId], references: [id])
+  orderItem       OrderItem             @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
   @@map("order_item_checkout_answers")
 }
-
-// ============================================================
-// ACTIVITY LOG
-// ============================================================
 
 model ActivityLog {
   id         String      @id @default(cuid())
@@ -243,16 +180,12 @@ model ActivityLog {
   action     String
   entityType String?
   entityId   String?
-
-  actorId String?
-  actor   User?   @relation("ActorLogs", fields: [actorId], references: [id])
-
-  details Json?
-
-  createdAt DateTime @default(now())
-
-  orderId String?
-  order   Order?  @relation("OrderLogs", fields: [orderId], references: [id])
+  actorId    String?
+  details    Json?
+  createdAt  DateTime    @default(now())
+  orderId    String?
+  actor      User?       @relation("ActorLogs", fields: [actorId], references: [id])
+  order      Order?      @relation("OrderLogs", fields: [orderId], references: [id])
 
   @@index([category])
   @@index([action])
@@ -260,40 +193,18 @@ model ActivityLog {
   @@map("activity_logs")
 }
 
-enum LogCategory {
-  AUTH
-  USER
-  PRODUCT
-  ORDER
-  PAYMENT
-  DELIVERY
-  COUPON
-  SYSTEM
-  SECURITY
-}
-
-// ============================================================
-// LOYALTY POINTS
-// ============================================================
-
-enum PointTransactionType {
-  EARNED
-  REFUNDED
-  REDEEMED
-}
-
 model PointTransaction {
   id        String               @id @default(cuid())
   userId    String
-  user      User                 @relation(fields: [userId], references: [id])
   orderId   String?
-  order     Order?               @relation(fields: [orderId], references: [id])
   couponId  String?
-  coupon    Coupon?              @relation(fields: [couponId], references: [id])
   type      PointTransactionType
   points    Int
   amount    Decimal              @default(0)
   createdAt DateTime             @default(now())
+  coupon    Coupon?              @relation(fields: [couponId], references: [id])
+  order     Order?               @relation(fields: [orderId], references: [id])
+  user      User                 @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([orderId])
@@ -312,21 +223,16 @@ model PointReward {
   redeemedCount  Int          @default(0)
   isActive       Boolean      @default(true)
   expiresAt      DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@map("point_rewards")
 }
 
-// ============================================================
-// FAQ
-// ============================================================
-
 model Faq {
   id        String   @id @default(cuid())
   question  String
-  answer    String   @db.Text
+  answer    String
   order     Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -335,21 +241,69 @@ model Faq {
   @@map("faqs")
 }
 
-// ============================================================
-// PAYMENT METHOD CONFIG
-// ============================================================
-
 model PaymentMethodConfig {
-  id                 String   @id @default(cuid())
-  type               String   // e.g. VIRTUAL_ACCOUNT, QR_CODE, EWALLET
-  channel            String   // e.g. BCA, BNI, QRIS, OVO, DANA
-  name               String   // e.g. BCA Virtual Account
-  isActive           Boolean  @default(true)
-  paymentExpiryHours Int      @default(24) // Expiry limit in hours (default: 24)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  type                 String
+  channel              String
+  name                 String
+  isActive             Boolean  @default(true)
+  paymentExpiryHours   Int      @default(24)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  paymentExpiryMinutes Int      @default(0)
 
   @@unique([type, channel])
   @@map("payment_method_configs")
 }
 
+model Banner {
+  id         String   @id @default(cuid())
+  title      String?
+  subtitle   String?
+  buttonText String?
+  buttonLink String?
+  imageKey   String
+  isActive   Boolean  @default(true)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("banners")
+}
+
+enum Role {
+  ADMIN
+  BUYER
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum LogCategory {
+  AUTH
+  USER
+  PRODUCT
+  ORDER
+  PAYMENT
+  DELIVERY
+  COUPON
+  SYSTEM
+  SECURITY
+}
+
+enum PointTransactionType {
+  EARNED
+  REFUNDED
+  REDEEMED
+}

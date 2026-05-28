@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsEmail,
   IsInt,
   IsOptional,
   IsString,
@@ -63,6 +64,7 @@ export class PlaceOrderRequestDto {
 
   @ApiProperty({ example: 'customer@example.com' })
   @IsString()
+  @IsEmail({}, { message: 'Format email tidak valid' })
   customerEmail: string;
 
   @ApiProperty({ example: '081234567890' })

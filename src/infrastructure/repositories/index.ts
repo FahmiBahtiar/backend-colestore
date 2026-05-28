@@ -19,3 +19,4 @@ export { PrismaPointTransactionRepository } from './prisma-point-transaction.rep
 export { PrismaPointRewardRepository } from './prisma-point-reward.repository';
 export { PrismaFaqRepository } from './prisma-faq.repository';
 export { PrismaPaymentMethodConfigRepository } from './prisma-payment-method-config.repository';
+export { PrismaBannerRepository } from './prisma-banner.repository';

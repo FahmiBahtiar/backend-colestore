@@ -15,6 +15,7 @@ import {
   POINT_REWARD_REPOSITORY,
   FAQ_REPOSITORY,
   PAYMENT_METHOD_CONFIG_REPOSITORY,
+  BANNER_REPOSITORY,
 } from '../domain/repositories/tokens';
 import { InfrastructureModule } from '../infrastructure';
 import {
@@ -31,6 +32,7 @@ import {
   PrismaPointRewardRepository,
   PrismaFaqRepository,
   PrismaPaymentMethodConfigRepository,
+  PrismaBannerRepository,
 } from '../infrastructure/repositories';
 import {
   GetActivityLogsUseCase,
@@ -88,6 +90,11 @@ import {
   GetFaqDetailUseCase,
   GetPaymentMethodConfigsUseCase,
   TogglePaymentMethodConfigUseCase,
+  CreateBannerUseCase,
+  UpdateBannerUseCase,
+  DeleteBannerUseCase,
+  ListBannersUseCase,
+  GetBannerDetailUseCase,
 } from './use-cases';
 
 const repositoryProviders = [
@@ -121,6 +128,10 @@ const repositoryProviders = [
   {
     provide: PAYMENT_METHOD_CONFIG_REPOSITORY,
     useClass: PrismaPaymentMethodConfigRepository,
+  },
+  {
+    provide: BANNER_REPOSITORY,
+    useClass: PrismaBannerRepository,
   },
 ];
 
@@ -180,6 +191,11 @@ const useCaseProviders = [
   DeleteFaqUseCase,
   ListFaqsUseCase,
   GetFaqDetailUseCase,
+  CreateBannerUseCase,
+  UpdateBannerUseCase,
+  DeleteBannerUseCase,
+  ListBannersUseCase,
+  GetBannerDetailUseCase,
 ];
 
 @Module({

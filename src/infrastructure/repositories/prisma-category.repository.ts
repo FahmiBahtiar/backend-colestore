@@ -60,6 +60,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       data: {
         name: data.name!,
         slug: data.slug!,
+        imageKey: data.imageKey,
       },
     });
   }
@@ -79,6 +80,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
       data: {
         ...(data.name !== undefined && { name: data.name }),
         ...(data.slug !== undefined && { slug: data.slug }),
+        ...(data.imageKey !== undefined && { imageKey: data.imageKey }),
       },
     });
   }

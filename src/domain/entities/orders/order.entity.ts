@@ -88,7 +88,7 @@ export class Order extends BaseEntity {
 
   /** Mark order as paid after trusted payment confirmation. */
   markPaid(paymentProof?: string | null): void {
-    this.ensureStatus(['PENDING']);
+    this.ensureStatus(['PENDING', 'CANCELLED']);
     this.props.status = 'PAID';
     this.props.paymentProof = paymentProof ?? this.props.paymentProof;
   }

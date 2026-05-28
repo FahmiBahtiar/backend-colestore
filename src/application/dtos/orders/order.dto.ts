@@ -19,6 +19,8 @@ export interface OrderResponseDto {
   paymentProof: string | null;
   deliveredAt: Date | null;
   deliveredById: string | null;
+  deliveredBy?: { id: string; email: string; name: string | null } | null;
+  user?: { id: string; email: string; name: string | null } | null;
   deliveryNote: string | null;
   couponId: string | null;
   couponCode?: string | null;
