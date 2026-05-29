@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { Order } from '../../../domain/entities';
 import { IOrderRepository } from '../../../domain/repositories';
 import { ORDER_REPOSITORY } from '../../../domain/repositories/tokens';
@@ -53,8 +59,9 @@ export class ProcessPaymentWebhookUseCase {
 
     const order = Order.create(orderRecord);
 
-    // Idempotency: if order is already in a terminal state (except CANCELLED if payment succeeds), skip processing
-    if (order.status !== 'PENDING' && order.status !== 'CANCELLED') {
+    // Idempotency: Webhooks only process orders currently in the PENDING state.
+    // Duplicate callbacks for already PAID or CANCELLED orders are safely ignored.
+    if (order.status !== 'PENDING') {
       this.logger.log(
         `Order ${order.id} already in status ${order.status}, skipping webhook`,
       );
@@ -62,11 +69,24 @@ export class ProcessPaymentWebhookUseCase {
     }
 
     if (webhook.status === 'PAID') {
+      // Validate payment callback amount against order amount to prevent tampering
+      if (webhook.amount !== undefined) {
+        const expectedAmount = Number(orderRecord.finalAmount);
+        const paidAmount = Number(webhook.amount);
+
+        if (!Number.isFinite(expectedAmount) || !Number.isFinite(paidAmount)) {
+          throw new BadRequestException('Invalid payment amount.');
+        }
+
+        if (expectedAmount !== paidAmount) {
+          this.logger.error(
+            `Amount mismatch on payment callback for order ${order.id}. Expected: ${expectedAmount}, Paid: ${paidAmount}`,
+          );
+          throw new BadRequestException('Payment amount mismatch.');
+        }
+      }
       order.markPaid(webhook.paymentProof ?? null);
-    } else if (
-      order.status === 'PENDING' &&
-      (webhook.status === 'EXPIRED' || webhook.status === 'FAILED')
-    ) {
+    } else if (webhook.status === 'EXPIRED' || webhook.status === 'FAILED') {
       order.cancel();
     } else {
       this.logger.log(

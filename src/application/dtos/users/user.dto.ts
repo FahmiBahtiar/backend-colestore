@@ -12,6 +12,8 @@ export interface UserResponseDto {
 export interface ListUsersInputDto {
   skip?: number;
   take?: number;
+  search?: string;
+  role?: string;
 }
 
 export interface UpdateUserInputDto {

@@ -91,11 +91,51 @@ export class ListOrdersQueryDto {
   @IsOptional()
   @IsInt()
   @Min(0)
+  @Type(() => Number)
   skip?: number;
 
   @ApiPropertyOptional({ example: 20 })
   @IsOptional()
   @IsInt()
   @Min(1)
+  @Type(() => Number)
   take?: number;
+
+  @ApiPropertyOptional({ example: 'PAID' })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @ApiPropertyOptional({
+    example: 'customer@example.com',
+    description: 'Search by ID, email, or Whatsapp',
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ example: '2026-05-01' })
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  @ApiPropertyOptional({ example: '2026-05-31' })
+  @IsOptional()
+  @IsString()
+  endDate?: string;
+
+  @ApiPropertyOptional({
+    example: 'NEWEST',
+    description: 'NEWEST, OLDEST, AMOUNT_DESC, AMOUNT_ASC',
+  })
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @ApiPropertyOptional({
+    description: 'Cursor for next page pagination (base64 JSON)',
+  })
+  @IsOptional()
+  @IsString()
+  cursor?: string;
 }

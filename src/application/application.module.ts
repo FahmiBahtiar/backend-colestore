@@ -96,6 +96,7 @@ import {
   ListBannersUseCase,
   GetBannerDetailUseCase,
 } from './use-cases';
+import { MeilisearchEventListener } from './listeners/meilisearch.listener';
 
 const repositoryProviders = [
   { provide: ACTIVITY_LOG_REPOSITORY, useClass: PrismaActivityLogRepository },
@@ -215,7 +216,11 @@ const useCaseProviders = [
       }),
     }),
   ],
-  providers: [...repositoryProviders, ...useCaseProviders],
+  providers: [
+    ...repositoryProviders,
+    ...useCaseProviders,
+    MeilisearchEventListener,
+  ],
   exports: [JwtModule, ...repositoryProviders, ...useCaseProviders],
 })
 export class ApplicationModule {}

@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { IProductRepository } from '../../../domain/repositories';
 import { PRODUCT_REPOSITORY } from '../../../domain/repositories/tokens';
 
@@ -7,6 +8,7 @@ export class DeactivateProductUseCase {
   constructor(
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /** Soft-delete a product by marking it inactive. */
@@ -16,5 +18,6 @@ export class DeactivateProductUseCase {
       throw new NotFoundException('Product not found');
     }
     await this.productRepository.update(id, { isActive: false });
+    this.eventEmitter.emit('product.updated', { productId: id });
   }
 }

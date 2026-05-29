@@ -47,4 +47,5 @@ export interface IProductRepository extends IBaseRepository<ProductEntity> {
     search?: string;
     includeInactive?: boolean;
   }): Promise<{ items: ProductEntity[]; total: number }>;
+  findByIds(ids: string[]): Promise<ProductEntity[]>;
 }

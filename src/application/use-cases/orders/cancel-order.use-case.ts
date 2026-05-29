@@ -31,6 +31,6 @@ export class CancelOrderUseCase {
       id,
       orderEntity.toPrimitives().status,
     );
-    return OrderMapper.toResponse(cancelled);
+    return OrderMapper.toDetailResponse(cancelled);
   }
 }

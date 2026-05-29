@@ -58,24 +58,24 @@ services:
       timeout: 5s
       retries: 5
 
-  # Optional: Meilisearch untuk full-text search
-  # meilisearch:
-  #   image: getmeili/meilisearch:v1.10
-  #   container_name: colestore-meilisearch
-  #   restart: unless-stopped
-  #   ports:
-  #     - "${MEILI_PORT:-7700}:7700"
-  #   environment:
-  #     MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-masterKey123}
-  #   volumes:
-  #     - meili_data:/meili_data
-  #   networks:
-  #     - colestore-network
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
+  # Meilisearch untuk full-text search
+  meilisearch:
+    image: getmeili/meilisearch:v1.10
+    container_name: colestore-meilisearch
+    restart: unless-stopped
+    ports:
+      - "${MEILI_PORT:-7700}:7700"
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - colestore-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   colestore-network:
@@ -85,4 +85,4 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
-  # meili_data:
+  meili_data:

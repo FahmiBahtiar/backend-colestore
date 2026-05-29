@@ -210,6 +210,20 @@ export class PrismaProductRepository implements IProductRepository {
     await this.prisma.product.delete({ where: { id } });
   }
 
+  /** Find multiple products by their IDs */
+  async findByIds(ids: string[]): Promise<ProductEntity[]> {
+    if (ids.length === 0) return [];
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: ids } },
+      include: {
+        category: true,
+        variants: true,
+        checkoutFields: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+    return products.map((p) => this.toEntity(p));
+  }
+
   /** Map Prisma Product to domain entity */
   private toEntity(product: Record<string, unknown>): ProductEntity {
     const p = product as {

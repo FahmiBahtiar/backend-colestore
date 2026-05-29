@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   IUserRepository,
@@ -16,7 +17,10 @@ import {
  */
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   /** Find a user by ID */
   async findById(id: string): Promise<UserEntity | null> {
@@ -100,6 +104,7 @@ export class PrismaUserRepository implements IUserRepository {
         isActive: data.isActive ?? true,
       },
     });
+    this.eventEmitter.emit('user.created', { userId: user.id });
     return this.toEntity(user);
   }
 
@@ -120,6 +125,7 @@ export class PrismaUserRepository implements IUserRepository {
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
     });
+    this.eventEmitter.emit('user.updated', { userId: user.id });
     return this.toEntity(user);
   }
 
@@ -130,6 +136,15 @@ export class PrismaUserRepository implements IUserRepository {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     await this.prisma.user.delete({ where: { id } });
+  }
+
+  /** Find multiple users by their IDs */
+  async findByIds(ids: string[]): Promise<UserEntity[]> {
+    if (ids.length === 0) return [];
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: ids } },
+    });
+    return users.map((u) => this.toEntity(u));
   }
 
   /** Map Prisma User to domain entity */

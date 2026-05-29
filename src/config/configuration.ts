@@ -56,3 +56,17 @@ export const throttleConfig = registerAs('throttle', () => ({
   ttl: parseInt(process.env.THROTTLE_TTL || '60000', 10),
   limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
 }));
+
+/** Meilisearch configuration */
+export const meilisearchConfig = registerAs('meilisearch', () => {
+  const apiKey = process.env.MEILI_MASTER_KEY;
+  if (!apiKey && process.env.NODE_ENV === 'production') {
+    throw new Error('MEILI_MASTER_KEY is required in production environment');
+  }
+  return {
+    host: process.env.MEILI_HOST || 'http://localhost:7700',
+    apiKey: apiKey || '',
+    indexPrefix: process.env.MEILI_INDEX_PREFIX || 'colestore_',
+    indexVersion: process.env.MEILI_INDEX_VERSION || 'v1',
+  };
+});

@@ -357,6 +357,7 @@ export class DuitkuService implements IPaymentGatewayPort {
       paymentRequestId: reference,
       status: isPaid ? 'PAID' : 'FAILED',
       paymentProof: reference,
+      amount: amount ? Number(amount) : undefined,
     };
   }
 

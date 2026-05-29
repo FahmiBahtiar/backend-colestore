@@ -6,4 +6,5 @@ export {
   jwtConfig,
   duitkuConfig,
   throttleConfig,
+  meilisearchConfig,
 } from './configuration';

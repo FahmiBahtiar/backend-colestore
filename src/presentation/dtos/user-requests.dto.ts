@@ -20,6 +20,16 @@ export class ListUsersQueryDto {
   @IsInt()
   @Min(1)
   take?: number;
+
+  @ApiPropertyOptional({ example: 'John' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ enum: ['ADMIN', 'BUYER'], example: 'BUYER' })
+  @IsOptional()
+  @IsString()
+  role?: string;
 }
 
 export class UpdateUserRequestDto {

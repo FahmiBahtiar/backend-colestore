@@ -5,6 +5,7 @@ import {
   ProductEntity,
 } from '../../../domain/repositories';
 import { PRODUCT_REPOSITORY } from '../../../domain/repositories/tokens';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProductResponseDto, UpdateProductInputDto } from '../../dtos';
 import { throwBadRequestForDomainError } from '../../errors';
 import { ProductMapper } from '../../mappers';
@@ -18,6 +19,7 @@ export class UpdateProductUseCase {
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
     private readonly minioService: MinioService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /** Update product details while preserving domain invariants. */
@@ -59,6 +61,8 @@ export class UpdateProductUseCase {
       input.id,
       this.toUpdateData(input),
     );
+
+    this.eventEmitter.emit('product.updated', { productId: updated.id });
 
     // Clean up old image from MinIO if imageKey was replaced or deleted
     if (

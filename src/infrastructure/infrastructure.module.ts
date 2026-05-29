@@ -2,10 +2,17 @@ import { forwardRef, Module } from '@nestjs/common';
 import { PAYMENT_GATEWAY } from '../application/interfaces';
 import { QueueModule } from './queue';
 import { PrismaModule } from './prisma';
+import { RedisModule } from './redis';
+import { MeilisearchModule } from './meilisearch';
 import { MinioService, DuitkuService } from './services';
 
 @Module({
-  imports: [PrismaModule, forwardRef(() => QueueModule)],
+  imports: [
+    PrismaModule,
+    RedisModule,
+    MeilisearchModule,
+    forwardRef(() => QueueModule),
+  ],
   providers: [
     MinioService,
     DuitkuService,
@@ -13,6 +20,8 @@ import { MinioService, DuitkuService } from './services';
   ],
   exports: [
     PrismaModule,
+    RedisModule,
+    MeilisearchModule,
     QueueModule,
     MinioService,
     DuitkuService,

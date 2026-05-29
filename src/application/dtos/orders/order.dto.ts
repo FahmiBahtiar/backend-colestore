@@ -26,6 +26,7 @@ export interface OrderResponseDto {
   couponCode?: string | null;
   createdAt: Date;
   updatedAt: Date;
+  items?: any[];
 }
 
 export interface OrderItemCheckoutAnswerInputDto {
@@ -49,6 +50,7 @@ export interface PlaceOrderInputDto {
   customerWhatsapp: string;
   paymentMethodType: string;
   paymentChannel: string;
+  idempotencyKey?: string | null;
 }
 
 export interface PlaceOrderResultDto {
@@ -65,9 +67,21 @@ export interface ListOrdersInputDto {
   userId: string;
   skip?: number;
   take?: number;
+  status?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  sortBy?: string;
+  cursor?: string;
 }
 
 export interface ListAllOrdersInputDto {
   skip?: number;
   take?: number;
+  status?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  sortBy?: string;
+  cursor?: string;
 }

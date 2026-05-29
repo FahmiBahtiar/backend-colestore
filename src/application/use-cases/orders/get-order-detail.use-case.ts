@@ -63,7 +63,7 @@ export class GetOrderDetailUseCase {
               status: 'PAID',
             });
 
-            return OrderMapper.toResponse(updated);
+            return OrderMapper.toDetailResponse(updated);
           }
         } catch (err) {
           this.logger.error(
@@ -89,7 +89,7 @@ export class GetOrderDetailUseCase {
           status: 'CANCELLED',
         });
 
-        return OrderMapper.toResponse(updated);
+        return OrderMapper.toDetailResponse(updated);
       }
     }
 
@@ -135,7 +135,7 @@ export class GetOrderDetailUseCase {
             status: 'PAID',
           });
 
-          return OrderMapper.toResponse(updated);
+          return OrderMapper.toDetailResponse(updated);
         }
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : String(err);
@@ -149,6 +149,6 @@ export class GetOrderDetailUseCase {
       );
     }
 
-    return OrderMapper.toResponse(order);
+    return OrderMapper.toDetailResponse(order);
   }
 }

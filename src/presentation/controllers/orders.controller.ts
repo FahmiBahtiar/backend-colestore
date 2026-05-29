@@ -8,6 +8,8 @@ import {
   Post,
   Query,
   UseGuards,
+  Headers,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -46,8 +48,13 @@ export class OrdersController {
   @ApiResponse({ status: 201, description: 'Order placed.' })
   async placeOrder(
     @Body() body: PlaceOrderRequestDto,
+    @Headers('x-idempotency-key') idempotencyKey?: string,
     @CurrentUser() user?: AuthenticatedUser | null,
   ) {
+    if (!idempotencyKey || !idempotencyKey.trim()) {
+      throw new BadRequestException('X-Idempotency-Key header is required');
+    }
+
     return this.placeOrderUseCase.execute({
       userId: user?.id ?? null,
       items: body.items,
@@ -56,6 +63,7 @@ export class OrdersController {
       customerWhatsapp: body.customerWhatsapp,
       paymentMethodType: body.paymentMethodType,
       paymentChannel: body.paymentChannel,
+      idempotencyKey,
     });
   }
 

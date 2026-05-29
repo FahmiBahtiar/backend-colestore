@@ -23,6 +23,6 @@ export class StartOrderProcessingUseCase {
       status: order.toPrimitives().status,
     });
 
-    return OrderMapper.toResponse(updated);
+    return OrderMapper.toDetailResponse(updated);
   }
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PrismaModule } from './infrastructure/prisma';
 import { ApplicationModule } from './application/application.module';
 import { PresentationModule } from './presentation';
@@ -20,12 +21,16 @@ import {
   jwtConfig,
   duitkuConfig,
   throttleConfig,
+  meilisearchConfig,
 } from './config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 @Module({
   imports: [
+    // Global Event Emitter
+    EventEmitterModule.forRoot(),
+
     // Global config — loads .env and typed configs
     ConfigModule.forRoot({
       isGlobal: true,
@@ -38,6 +43,7 @@ import { AppService } from './app.service';
         jwtConfig,
         duitkuConfig,
         throttleConfig,
+        meilisearchConfig,
       ],
     }),
 

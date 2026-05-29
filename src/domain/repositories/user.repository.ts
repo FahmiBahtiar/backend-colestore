@@ -21,4 +21,5 @@ export interface IUserRepository extends IBaseRepository<UserEntity> {
     skip?: number;
     take?: number;
   }): Promise<{ items: UserEntity[]; total: number }>;
+  findByIds(ids: string[]): Promise<UserEntity[]>;
 }

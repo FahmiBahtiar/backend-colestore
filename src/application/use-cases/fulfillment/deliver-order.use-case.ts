@@ -32,6 +32,6 @@ export class DeliverOrderUseCase {
     // Award loyalty points only when the transaction is completed (DELIVERED)
     await this.awardOrderPointsUseCase.execute(updated);
 
-    return OrderMapper.toResponse(updated);
+    return OrderMapper.toDetailResponse(updated);
   }
 }

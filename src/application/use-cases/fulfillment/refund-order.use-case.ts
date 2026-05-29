@@ -27,6 +27,6 @@ export class RefundOrderUseCase {
 
     await this.revokeOrderPointsUseCase.execute(updated);
 
-    return OrderMapper.toResponse(updated);
+    return OrderMapper.toDetailResponse(updated);
   }
 }

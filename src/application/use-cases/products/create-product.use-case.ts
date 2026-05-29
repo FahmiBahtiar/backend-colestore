@@ -5,6 +5,7 @@ import {
   ProductEntity,
 } from '../../../domain/repositories';
 import { PRODUCT_REPOSITORY } from '../../../domain/repositories/tokens';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateProductInputDto, ProductResponseDto } from '../../dtos';
 import { ProductMapper } from '../../mappers';
 import { MinioService } from '../../../infrastructure/services/minio.service';
@@ -17,6 +18,7 @@ export class CreateProductUseCase {
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
     private readonly minioService: MinioService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /** Create a digital product after enforcing domain product invariants. */
@@ -57,6 +59,8 @@ export class CreateProductUseCase {
     const created = await this.productRepository.create(
       this.toCreateData(props),
     );
+
+    this.eventEmitter.emit('product.created', { productId: created.id });
 
     let imageUrl: string | null = null;
     if (created.imageKey) {

@@ -7,6 +7,7 @@ import {
 } from '../../domain/repositories/admin-dashboard.repository';
 import type { OrderStatus } from '../../domain/entities';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 
 const PAID_STATUSES: OrderStatus[] = ['PAID', 'PROCESSING', 'DELIVERED'];
 const ORDER_STATUSES: OrderStatus[] = [
@@ -33,11 +34,31 @@ interface TopProductRow {
 
 @Injectable()
 export class PrismaAdminDashboardRepository implements IAdminDashboardRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {}
 
   async getSnapshot(
     query: AdminDashboardQuery,
   ): Promise<AdminDashboardSnapshot> {
+    const cacheKey = `admin:dashboard:snapshot:${query.days}:${query.topProductsLimit}:${query.recentOrdersLimit}:${query.recentActivityLimit}:${query.lowStockThreshold}:${new Date(query.startDate).getTime()}:${new Date(query.endDate).getTime()}`;
+
+    let cached: string | null = null;
+    try {
+      cached = await this.redisService.get(cacheKey);
+    } catch (err) {
+      console.error('Redis cache get error, falling back to database:', err);
+    }
+
+    if (cached) {
+      try {
+        return JSON.parse(cached) as AdminDashboardSnapshot;
+      } catch {
+        // Fallback to database
+      }
+    }
+
     const {
       startDate,
       endDate,
@@ -149,7 +170,7 @@ export class PrismaAdminDashboardRepository implements IAdminDashboardRepository
       ordersByStatus[row.status] = countValue;
     }
 
-    return {
+    const result: AdminDashboardSnapshot = {
       period: {
         startDate,
         endDate,
@@ -194,6 +215,14 @@ export class PrismaAdminDashboardRepository implements IAdminDashboardRepository
         createdAt: log.createdAt,
       })),
     };
+
+    try {
+      await this.redisService.set(cacheKey, JSON.stringify(result), 300);
+    } catch (err) {
+      console.error('Redis cache set error:', err);
+    }
+
+    return result;
   }
 
   private buildDailySeries(

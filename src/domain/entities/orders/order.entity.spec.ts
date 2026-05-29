@@ -6,7 +6,7 @@ const now = new Date('2026-01-01T00:00:00.000Z');
 
 function makeOrder(overrides: Partial<OrderProps> = {}): Order {
   return Order.create({
-    id: 'order-1',
+    id: 'APM00TEST1',
     userId: 'user-1',
     customerEmail: 'customer@example.com',
     customerWhatsapp: '081234567890',
@@ -113,7 +113,7 @@ describe('OrderItem entity', () => {
   it('accepts valid subtotal calculations', () => {
     const item = OrderItem.create({
       id: 'item-1',
-      orderId: 'order-1',
+      orderId: 'APM00TEST1',
       productId: 'product-1',
       variantId: null,
       couponId: null,
@@ -131,7 +131,7 @@ describe('OrderItem entity', () => {
     expect(() =>
       OrderItem.create({
         id: 'item-1',
-        orderId: 'order-1',
+        orderId: 'APM00TEST1',
         productId: 'product-1',
         variantId: null,
         couponId: null,
@@ -148,7 +148,7 @@ describe('OrderItem entity', () => {
     expect(() =>
       OrderItem.create({
         id: 'item-1',
-        orderId: 'order-1',
+        orderId: 'APM00TEST1',
         productId: 'product-1',
         variantId: null,
         couponId: null,

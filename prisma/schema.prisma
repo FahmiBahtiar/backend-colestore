@@ -103,10 +103,10 @@ model Order {
   discountAmount           Decimal            @default(0)
   finalAmount              Decimal
   status                   OrderStatus        @default(PENDING)
-  paymentGatewayInvoiceId  String?
+  paymentGatewayInvoiceId  String?            @unique
   paymentGatewayInvoiceUrl String?
   paymentGatewayExpiresAt  DateTime?
-  paymentGatewayRequestId  String?
+  paymentGatewayRequestId  String?            @unique
   paymentMethodType        String?
   paymentChannel           String?
   paymentInstructions      Json?
@@ -124,7 +124,9 @@ model Order {
   user                     User?              @relation(fields: [userId], references: [id])
   pointTransactions        PointTransaction[]
 
-  @@index([paymentGatewayRequestId])
+  @@index([userId, createdAt, id])
+  @@index([createdAt, id])
+  @@index([status, createdAt, id])
   @@map("orders")
 }
 
@@ -306,4 +308,21 @@ enum PointTransactionType {
   EARNED
   REFUNDED
   REDEEMED
+}
+
+model IdempotencyKey {
+  id              String   @id @default(cuid())
+  userId          String   // Maps to user.id or 'GUEST'
+  key             String
+  requestHash     String
+  orderId         String?
+  status          String   // "PROCESSING" | "SUCCESS" | "FAILED" | "COMPENSATED"
+  responsePayload Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([userId])
+  @@index([orderId])
+  @@map("idempotency_keys")
 }

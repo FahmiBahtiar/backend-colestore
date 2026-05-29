@@ -1,14 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, OrderStatus } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   IOrderRepository,
   OrderEntity,
+  ListOrdersParams,
+  OrderListResult,
 } from '../../domain/repositories/order.repository';
-import {
-  PaginatedResult,
-  buildPaginatedResult,
-} from '../../common/utils/pagination';
+import { RedisService } from '../redis/redis.service';
+
+interface OrderWithInclude {
+  id: string;
+  createdAt: Date;
+  [key: string]: unknown;
+}
 
 /**
  * Concrete Prisma implementation of IOrderRepository.
@@ -16,7 +22,41 @@ import {
  */
 @Injectable()
 export class PrismaOrderRepository implements IOrderRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
+
+  private serializeCursor(createdAt: Date, id: string): string {
+    const jsonStr = JSON.stringify({ createdAt: createdAt.toISOString(), id });
+    return Buffer.from(jsonStr).toString('base64');
+  }
+
+  private deserializeCursor(
+    cursorStr: string,
+  ): { createdAt: Date; id: string } | null {
+    try {
+      const jsonStr = Buffer.from(cursorStr, 'base64').toString('utf-8');
+      const obj = JSON.parse(jsonStr) as unknown;
+      if (
+        obj &&
+        typeof obj === 'object' &&
+        'createdAt' in obj &&
+        'id' in obj &&
+        typeof (obj as { createdAt: unknown }).createdAt === 'string' &&
+        typeof (obj as { id: unknown }).id === 'string'
+      ) {
+        const payload = obj as { createdAt: string; id: string };
+        return { createdAt: new Date(payload.createdAt), id: payload.id };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private static lastExpirationCheck = 0;
 
   private static readonly orderInclude = {
     items: {
@@ -53,60 +93,302 @@ export class PrismaOrderRepository implements IOrderRepository {
     return this.toEntity(order);
   }
 
-  /** Find all orders with pagination */
-  async findAll(params?: {
-    skip?: number;
-    take?: number;
-  }): Promise<PaginatedResult<OrderEntity>> {
-    const skip = params?.skip ?? 0;
-    const take = params?.take ?? 20;
+  /** Find all orders with pagination, filters, search, and sorting */
+  async findAll(params?: ListOrdersParams): Promise<OrderListResult> {
+    await this.processAutoExpirations();
+    const limit = params?.take ?? 20;
+    const safeLimit = Math.min(limit, 100);
+    const takePlusOne = safeLimit + 1;
 
-    const [orders, total] = await this.prisma.$transaction([
-      this.prisma.order.findMany({
-        skip,
-        take,
+    const where: Prisma.OrderWhereInput = {};
+
+    if (params?.status) {
+      where.status = params.status as OrderStatus;
+    }
+
+    if (params?.search) {
+      const q = params.search.trim();
+      where.OR = [
+        { id: { contains: q, mode: 'insensitive' } },
+        { customerEmail: { contains: q, mode: 'insensitive' } },
+        { customerWhatsapp: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    if (params?.startDate || params?.endDate) {
+      where.createdAt = {};
+      if (params.startDate) {
+        where.createdAt.gte = new Date(params.startDate);
+      }
+      if (params.endDate) {
+        where.createdAt.lte = new Date(params.endDate);
+      }
+    }
+
+    // Determine stable ordering: default to [createdAt DESC, id DESC]
+    let orderBy: Prisma.OrderOrderByWithRelationInput[] = [
+      { createdAt: 'desc' },
+      { id: 'desc' },
+    ];
+
+    if (!params?.cursor && params?.sortBy) {
+      switch (params.sortBy) {
+        case 'OLDEST':
+          orderBy = [{ createdAt: 'asc' }, { id: 'asc' }];
+          break;
+        case 'AMOUNT_DESC':
+          orderBy = [{ finalAmount: 'desc' }, { id: 'desc' }];
+          break;
+        case 'AMOUNT_ASC':
+          orderBy = [{ finalAmount: 'asc' }, { id: 'asc' }];
+          break;
+        case 'NEWEST':
+        default:
+          orderBy = [{ createdAt: 'desc' }, { id: 'desc' }];
+          break;
+      }
+    }
+
+    // Apply cursor filter if present
+    let cursorData: { createdAt: Date; id: string } | null = null;
+    if (params?.cursor) {
+      cursorData = this.deserializeCursor(params.cursor);
+    }
+
+    if (cursorData) {
+      where.AND = [
+        ...(where.AND
+          ? Array.isArray(where.AND)
+            ? where.AND
+            : [where.AND]
+          : []),
+        {
+          OR: [
+            { createdAt: { lt: cursorData.createdAt } },
+            {
+              createdAt: cursorData.createdAt,
+              id: { lt: cursorData.id },
+            },
+          ],
+        },
+      ];
+    }
+
+    let orders: OrderWithInclude[];
+    let total = 0;
+    let hasNextPage = false;
+    let pageNum = 1;
+
+    if (params?.cursor) {
+      // Cursor Mode: skip expensive COUNT, directly findMany
+      orders = await this.prisma.order.findMany({
+        where,
+        take: takePlusOne,
         include: PrismaOrderRepository.orderInclude,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.order.count(),
-    ]);
+        orderBy,
+      });
 
-    return buildPaginatedResult(
-      orders.map((o) => this.toEntity(o)),
+      hasNextPage = orders.length > safeLimit;
+    } else {
+      // Offset Mode: support full transaction with COUNT
+      const skip = params?.skip ?? 0;
+      pageNum = Math.floor(skip / safeLimit) + 1;
+
+      const [rawOrders, rawTotal] = await this.prisma.$transaction([
+        this.prisma.order.findMany({
+          where,
+          skip,
+          take: takePlusOne,
+          include: PrismaOrderRepository.orderInclude,
+          orderBy,
+        }),
+        this.prisma.order.count({ where }),
+      ]);
+
+      orders = rawOrders;
+      total = rawTotal;
+      hasNextPage = rawOrders.length > safeLimit;
+    }
+
+    const itemsToReturn = hasNextPage ? orders.slice(0, safeLimit) : orders;
+    const mappedItems = itemsToReturn.map((o) => this.toEntity(o));
+
+    const nextCursor =
+      hasNextPage && itemsToReturn.length > 0
+        ? this.serializeCursor(
+            itemsToReturn[itemsToReturn.length - 1].createdAt,
+            itemsToReturn[itemsToReturn.length - 1].id,
+          )
+        : null;
+
+    const totalPages = Math.ceil(total / safeLimit);
+
+    return {
+      items: mappedItems,
+      data: mappedItems,
       total,
-      Math.floor(skip / take) + 1,
-      take,
-    );
+      nextCursor,
+      hasNextPage,
+      limit: safeLimit,
+      meta: {
+        total,
+        page: pageNum,
+        limit: safeLimit,
+        totalPages: totalPages > 0 ? totalPages : 1,
+        hasNextPage,
+        hasPreviousPage: pageNum > 1,
+      },
+    };
   }
 
-  /** Find orders by user ID with pagination */
+  /** Find orders by user ID with pagination and optional filters */
   async findByUserId(
     userId: string,
-    params?: { skip?: number; take?: number },
-  ): Promise<{ items: OrderEntity[]; total: number }> {
-    const skip = params?.skip ?? 0;
-    const take = params?.take ?? 20;
+    params?: ListOrdersParams,
+  ): Promise<OrderListResult> {
+    await this.processAutoExpirations();
+    const limit = params?.take ?? 20;
+    const safeLimit = Math.min(limit, 100);
+    const takePlusOne = safeLimit + 1;
 
     const where: Prisma.OrderWhereInput = { userId };
 
-    const [orders, total] = await this.prisma.$transaction([
-      this.prisma.order.findMany({
-        where,
-        skip,
-        take,
-        include: {
-          items: {
-            include: { product: true, variant: true, checkoutAnswers: true },
-          },
+    if (params?.status) {
+      where.status = params.status as OrderStatus;
+    }
+
+    if (params?.search) {
+      const q = params.search.trim();
+      where.OR = [
+        { id: { contains: q, mode: 'insensitive' } },
+        { customerEmail: { contains: q, mode: 'insensitive' } },
+        { customerWhatsapp: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    if (params?.startDate || params?.endDate) {
+      where.createdAt = {};
+      if (params.startDate) {
+        where.createdAt.gte = new Date(params.startDate);
+      }
+      if (params.endDate) {
+        where.createdAt.lte = new Date(params.endDate);
+      }
+    }
+
+    // Determine stable ordering: default to [createdAt DESC, id DESC]
+    let orderBy: Prisma.OrderOrderByWithRelationInput[] = [
+      { createdAt: 'desc' },
+      { id: 'desc' },
+    ];
+
+    if (!params?.cursor && params?.sortBy) {
+      switch (params.sortBy) {
+        case 'OLDEST':
+          orderBy = [{ createdAt: 'asc' }, { id: 'asc' }];
+          break;
+        case 'AMOUNT_DESC':
+          orderBy = [{ finalAmount: 'desc' }, { id: 'desc' }];
+          break;
+        case 'AMOUNT_ASC':
+          orderBy = [{ finalAmount: 'asc' }, { id: 'asc' }];
+          break;
+        case 'NEWEST':
+        default:
+          orderBy = [{ createdAt: 'desc' }, { id: 'desc' }];
+          break;
+      }
+    }
+
+    // Apply cursor filter if present
+    let cursorData: { createdAt: Date; id: string } | null = null;
+    if (params?.cursor) {
+      cursorData = this.deserializeCursor(params.cursor);
+    }
+
+    if (cursorData) {
+      where.AND = [
+        ...(where.AND
+          ? Array.isArray(where.AND)
+            ? where.AND
+            : [where.AND]
+          : []),
+        {
+          OR: [
+            { createdAt: { lt: cursorData.createdAt } },
+            {
+              createdAt: cursorData.createdAt,
+              id: { lt: cursorData.id },
+            },
+          ],
         },
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.order.count({ where }),
-    ]);
+      ];
+    }
+
+    let orders: OrderWithInclude[];
+    let total = 0;
+    let hasNextPage = false;
+    let pageNum = 1;
+
+    if (params?.cursor) {
+      // Cursor Mode: skip expensive COUNT, directly findMany
+      orders = await this.prisma.order.findMany({
+        where,
+        take: takePlusOne,
+        include: PrismaOrderRepository.orderInclude,
+        orderBy,
+      });
+
+      hasNextPage = orders.length > safeLimit;
+    } else {
+      // Offset Mode: support full transaction with COUNT
+      const skip = params?.skip ?? 0;
+      pageNum = Math.floor(skip / safeLimit) + 1;
+
+      const [rawOrders, rawTotal] = await this.prisma.$transaction([
+        this.prisma.order.findMany({
+          where,
+          skip,
+          take: takePlusOne,
+          include: PrismaOrderRepository.orderInclude,
+          orderBy,
+        }),
+        this.prisma.order.count({ where }),
+      ]);
+
+      orders = rawOrders;
+      total = rawTotal;
+      hasNextPage = rawOrders.length > safeLimit;
+    }
+
+    const itemsToReturn = hasNextPage ? orders.slice(0, safeLimit) : orders;
+    const mappedItems = itemsToReturn.map((o) => this.toEntity(o));
+
+    const nextCursor =
+      hasNextPage && itemsToReturn.length > 0
+        ? this.serializeCursor(
+            itemsToReturn[itemsToReturn.length - 1].createdAt,
+            itemsToReturn[itemsToReturn.length - 1].id,
+          )
+        : null;
+
+    const totalPages = Math.ceil(total / safeLimit);
 
     return {
-      items: orders.map((o) => this.toEntity(o)),
+      items: mappedItems,
+      data: mappedItems,
       total,
+      nextCursor,
+      hasNextPage,
+      limit: safeLimit,
+      meta: {
+        total,
+        page: pageNum,
+        limit: safeLimit,
+        totalPages: totalPages > 0 ? totalPages : 1,
+        hasNextPage,
+        hasPreviousPage: pageNum > 1,
+      },
     };
   }
 
@@ -186,6 +468,17 @@ export class PrismaOrderRepository implements IOrderRepository {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
 
+    if (status === 'CANCELLED' && existing.status === 'PENDING') {
+      const transitionResult = await this.prisma.order.updateMany({
+        where: { id, status: 'PENDING' },
+        data: { status: 'CANCELLED' },
+      });
+
+      if (transitionResult.count > 0) {
+        await this.restoreResources(id, existing.couponId);
+      }
+    }
+
     const order = await this.prisma.order.update({
       where: { id },
       data: { status },
@@ -196,13 +489,34 @@ export class PrismaOrderRepository implements IOrderRepository {
         user: { select: { id: true, email: true, name: true } },
       },
     });
+
+    try {
+      await this.redisService.delPattern('admin:dashboard:snapshot:*');
+    } catch (err) {
+      console.error('Redis delPattern error during updateStatus:', err);
+    }
+
     return this.toEntity(order);
+  }
+
+  /**
+   * Generate a branded order ID with APM prefix + 8 random uppercase alphanumeric chars.
+   * Example: APM4R5K7N2X1
+   */
+  private static generateOrderId(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = 'APM';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
   }
 
   /** Create a new order */
   async create(data: Partial<OrderEntity>): Promise<OrderEntity> {
     const order = await this.prisma.order.create({
       data: {
+        id: PrismaOrderRepository.generateOrderId(),
         userId: data.userId ?? null,
         customerEmail: data.customerEmail ?? '',
         customerWhatsapp: data.customerWhatsapp ?? '',
@@ -226,6 +540,15 @@ export class PrismaOrderRepository implements IOrderRepository {
         user: { select: { id: true, email: true, name: true } },
       },
     });
+
+    try {
+      await this.redisService.delPattern('admin:dashboard:snapshot:*');
+    } catch (err) {
+      console.error('Redis delPattern error during create:', err);
+    }
+
+    this.eventEmitter.emit('order.created', { orderId: order.id });
+
     return this.toEntity(order);
   }
 
@@ -234,6 +557,17 @@ export class PrismaOrderRepository implements IOrderRepository {
     const existing = await this.prisma.order.findUnique({ where: { id } });
     if (!existing) {
       throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+
+    if (data.status === 'CANCELLED' && existing.status === 'PENDING') {
+      const transitionResult = await this.prisma.order.updateMany({
+        where: { id, status: 'PENDING' },
+        data: { status: 'CANCELLED' },
+      });
+
+      if (transitionResult.count > 0) {
+        await this.restoreResources(id, existing.couponId);
+      }
     }
 
     const order = await this.prisma.order.update({
@@ -277,6 +611,15 @@ export class PrismaOrderRepository implements IOrderRepository {
       },
       include: PrismaOrderRepository.orderInclude,
     });
+
+    try {
+      await this.redisService.delPattern('admin:dashboard:snapshot:*');
+    } catch (err) {
+      console.error('Redis delPattern error during update:', err);
+    }
+
+    this.eventEmitter.emit('order.updated', { orderId: order.id });
+
     return this.toEntity(order);
   }
 
@@ -287,6 +630,89 @@ export class PrismaOrderRepository implements IOrderRepository {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
     await this.prisma.order.delete({ where: { id } });
+
+    try {
+      await this.redisService.delPattern('admin:dashboard:snapshot:*');
+    } catch (err) {
+      console.error('Redis delPattern error during delete:', err);
+    }
+  }
+
+  /** Find multiple orders by their IDs */
+  async findByIds(ids: string[]): Promise<OrderEntity[]> {
+    if (ids.length === 0) return [];
+    const orders = await this.prisma.order.findMany({
+      where: { id: { in: ids } },
+      include: PrismaOrderRepository.orderInclude,
+    });
+    return orders.map((o) => this.toEntity(o));
+  }
+
+  private async restoreResources(
+    orderId: string,
+    couponId: string | null,
+  ): Promise<void> {
+    const items = await this.prisma.orderItem.findMany({ where: { orderId } });
+    for (const item of items) {
+      if (item.variantId) {
+        await this.prisma.productVariant.update({
+          where: { id: item.variantId },
+          data: { stockQuantity: { increment: item.quantity } },
+        });
+      } else {
+        await this.prisma.product.update({
+          where: { id: item.productId },
+          data: { stockQuantity: { increment: item.quantity } },
+        });
+      }
+    }
+
+    if (couponId) {
+      await this.prisma.coupon.updateMany({
+        where: { id: couponId, usedCount: { gt: 0 } },
+        data: { usedCount: { decrement: 1 } },
+      });
+    }
+  }
+
+  private async processAutoExpirations(): Promise<void> {
+    const now = Date.now();
+    const cooldownMs = 30000; // 30 seconds cooldown
+    if (now - PrismaOrderRepository.lastExpirationCheck < cooldownMs) {
+      return;
+    }
+    PrismaOrderRepository.lastExpirationCheck = now;
+
+    try {
+      const gracePeriodMs = 5 * 60 * 1000; // 5 minutes grace period
+      const threshold = new Date(now - gracePeriodMs);
+
+      const expiredOrders = await this.prisma.order.findMany({
+        where: {
+          status: 'PENDING',
+          paymentGatewayExpiresAt: {
+            lt: threshold,
+          },
+        },
+        select: {
+          id: true,
+          couponId: true,
+        },
+      });
+
+      for (const order of expiredOrders) {
+        const transitionResult = await this.prisma.order.updateMany({
+          where: { id: order.id, status: 'PENDING' },
+          data: { status: 'CANCELLED' },
+        });
+
+        if (transitionResult.count > 0) {
+          await this.restoreResources(order.id, order.couponId);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to run auto-expirations in background:', err);
+    }
   }
 
   /** Map Prisma Order to domain entity */

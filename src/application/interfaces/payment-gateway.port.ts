@@ -48,6 +48,7 @@ export interface PaymentWebhookPayload {
   paymentRequestId?: string;
   status: 'PAID' | 'EXPIRED' | 'FAILED' | 'PENDING';
   paymentProof?: string | null;
+  amount?: number;
 }
 
 /** Port for external payment provider integration. */

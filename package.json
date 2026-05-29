@@ -23,6 +23,7 @@
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "meilisearch:backfill": "ts-node src/scripts/backfill-meilisearch.ts",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -36,6 +37,7 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/event-emitter": "^3.1.0",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
@@ -54,6 +56,7 @@
     "dotenv": "^17.4.2",
     "helmet": "^8.1.0",
     "ioredis": "^5.10.1",
+    "meilisearch": "^0.58.0",
     "minio": "^8.0.7",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
