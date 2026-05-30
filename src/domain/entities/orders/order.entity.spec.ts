@@ -6,13 +6,21 @@ const now = new Date('2026-01-01T00:00:00.000Z');
 
 function makeOrder(overrides: Partial<OrderProps> = {}): Order {
   return Order.create({
-    id: 'order-1',
+    id: 'APM00TEST1',
     userId: 'user-1',
+    customerEmail: 'customer@example.com',
+    customerWhatsapp: '081234567890',
     totalAmount: 100_000,
     discountAmount: 10_000,
     finalAmount: 90_000,
     status: 'PENDING',
-    xenditInvoiceId: null,
+    paymentGatewayInvoiceId: null,
+    paymentGatewayInvoiceUrl: null,
+    paymentGatewayExpiresAt: null,
+    paymentGatewayRequestId: null,
+    paymentMethodType: null,
+    paymentChannel: null,
+    paymentInstructions: null,
     paymentProof: null,
     deliveredAt: null,
     deliveredById: null,
@@ -34,7 +42,7 @@ describe('Order entity', () => {
 
     order.attachInvoice('invoice-1');
 
-    expect(order.toPrimitives().xenditInvoiceId).toBe('invoice-1');
+    expect(order.toPrimitives().paymentGatewayInvoiceId).toBe('invoice-1');
   });
 
   it('moves through paid, processing, and delivered states', () => {
@@ -58,6 +66,16 @@ describe('Order entity', () => {
     const paidOrder = makeOrder({ status: 'PAID' });
 
     expect(() => paidOrder.cancel()).toThrow(DomainError);
+  });
+
+  it('allows transitioning from CANCELLED to PAID', () => {
+    const order = makeOrder();
+    order.cancel();
+    expect(order.status).toBe('CANCELLED');
+
+    order.markPaid('paid-proof');
+    expect(order.status).toBe('PAID');
+    expect(order.toPrimitives().paymentProof).toBe('paid-proof');
   });
 
   it('refunds only paid, processing, or delivered orders', () => {
@@ -95,7 +113,7 @@ describe('OrderItem entity', () => {
   it('accepts valid subtotal calculations', () => {
     const item = OrderItem.create({
       id: 'item-1',
-      orderId: 'order-1',
+      orderId: 'APM00TEST1',
       productId: 'product-1',
       variantId: null,
       couponId: null,
@@ -113,7 +131,7 @@ describe('OrderItem entity', () => {
     expect(() =>
       OrderItem.create({
         id: 'item-1',
-        orderId: 'order-1',
+        orderId: 'APM00TEST1',
         productId: 'product-1',
         variantId: null,
         couponId: null,
@@ -130,7 +148,7 @@ describe('OrderItem entity', () => {
     expect(() =>
       OrderItem.create({
         id: 'item-1',
-        orderId: 'order-1',
+        orderId: 'APM00TEST1',
         productId: 'product-1',
         variantId: null,
         couponId: null,

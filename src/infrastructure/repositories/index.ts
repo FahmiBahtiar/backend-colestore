@@ -4,6 +4,7 @@ export { PrismaOrderRepository } from './prisma-order.repository';
 export { PrismaCouponRepository } from './prisma-coupon.repository';
 export { PrismaCategoryRepository } from './prisma-category.repository';
 export { PrismaActivityLogRepository } from './prisma-activity-log.repository';
+export { PrismaAdminDashboardRepository } from './prisma-admin-dashboard.repository';
 export {
   PrismaProductVariantRepository,
   IProductVariantRepository,
@@ -14,3 +15,8 @@ export {
   IOrderItemRepository,
   OrderItemEntity,
 } from './prisma-order-item.repository';
+export { PrismaPointTransactionRepository } from './prisma-point-transaction.repository';
+export { PrismaPointRewardRepository } from './prisma-point-reward.repository';
+export { PrismaFaqRepository } from './prisma-faq.repository';
+export { PrismaPaymentMethodConfigRepository } from './prisma-payment-method-config.repository';
+export { PrismaBannerRepository } from './prisma-banner.repository';

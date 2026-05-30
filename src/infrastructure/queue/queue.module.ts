@@ -5,9 +5,14 @@ import { ApplicationModule } from '../../application/application.module';
 import { QUEUE_NAMES, DEFAULT_JOB_OPTIONS } from './queue.constants';
 import { PaymentWebhookProcessor } from './processors/payment-webhook.processor';
 import { OrderProcessingProcessor } from './processors/order-processing.processor';
+import { MeilisearchSyncProcessor } from './processors/meilisearch-sync.processor';
+import { PrismaModule } from '../prisma';
+import { MeilisearchModule } from '../meilisearch';
 
 @Module({
   imports: [
+    PrismaModule,
+    MeilisearchModule,
     forwardRef(() => ApplicationModule),
     BullModule.forRootAsync({
       inject: [ConfigService],
@@ -34,9 +39,17 @@ import { OrderProcessingProcessor } from './processors/order-processing.processo
         name: QUEUE_NAMES.ACTIVITY_LOG,
         defaultJobOptions: DEFAULT_JOB_OPTIONS,
       },
+      {
+        name: QUEUE_NAMES.MEILISEARCH_SYNC,
+        defaultJobOptions: DEFAULT_JOB_OPTIONS,
+      },
     ),
   ],
-  providers: [PaymentWebhookProcessor, OrderProcessingProcessor],
+  providers: [
+    PaymentWebhookProcessor,
+    OrderProcessingProcessor,
+    MeilisearchSyncProcessor,
+  ],
   exports: [BullModule],
 })
 export class QueueModule {}

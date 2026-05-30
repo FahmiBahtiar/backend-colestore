@@ -6,6 +6,9 @@ export const appConfig = registerAs('app', () => ({
   port: parseInt(process.env.PORT || '3001', 10),
   apiPrefix: process.env.API_PREFIX || 'api/v1',
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  apiPublicUrl:
+    process.env.API_PUBLIC_URL ||
+    `http://localhost:3001/${process.env.API_PREFIX || 'api/v1'}`,
 }));
 
 /** Database (PostgreSQL) configuration */
@@ -28,6 +31,7 @@ export const minioConfig = registerAs('minio', () => ({
   accessKey: process.env.MINIO_ROOT_USER,
   secretKey: process.env.MINIO_ROOT_PASSWORD,
   bucketName: process.env.MINIO_BUCKET_NAME || 'colestore',
+  publicUrl: process.env.MINIO_PUBLIC_URL,
 }));
 
 /** JWT authentication configuration */
@@ -38,10 +42,13 @@ export const jwtConfig = registerAs('jwt', () => ({
   refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
 }));
 
-/** Xendit payment configuration */
-export const xenditConfig = registerAs('xendit', () => ({
-  secretKey: process.env.XENDIT_SECRET_KEY,
-  webhookToken: process.env.XENDIT_WEBHOOK_TOKEN,
+/** Duitku payment configuration */
+export const duitkuConfig = registerAs('duitku', () => ({
+  merchantCode: process.env.DUITKU_MERCHANT_CODE,
+  merchantKey: process.env.DUITKU_MERCHANT_KEY,
+  callbackUrl: process.env.DUITKU_CALLBACK_URL,
+  returnUrl: process.env.DUITKU_RETURN_URL,
+  environment: process.env.DUITKU_ENVIRONMENT || 'sandbox',
 }));
 
 /** Rate limiting configuration */
@@ -49,3 +56,17 @@ export const throttleConfig = registerAs('throttle', () => ({
   ttl: parseInt(process.env.THROTTLE_TTL || '60000', 10),
   limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
 }));
+
+/** Meilisearch configuration */
+export const meilisearchConfig = registerAs('meilisearch', () => {
+  const apiKey = process.env.MEILI_MASTER_KEY;
+  if (!apiKey && process.env.NODE_ENV === 'production') {
+    throw new Error('MEILI_MASTER_KEY is required in production environment');
+  }
+  return {
+    host: process.env.MEILI_HOST || 'http://localhost:7700',
+    apiKey: apiKey || '',
+    indexPrefix: process.env.MEILI_INDEX_PREFIX || 'colestore_',
+    indexVersion: process.env.MEILI_INDEX_VERSION || 'v1',
+  };
+});

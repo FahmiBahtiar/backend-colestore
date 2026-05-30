@@ -4,12 +4,14 @@ import { IOrderRepository } from '../../../domain/repositories';
 import { ORDER_REPOSITORY } from '../../../domain/repositories/tokens';
 import { DeliverOrderInputDto, OrderResponseDto } from '../../dtos';
 import { OrderMapper } from '../../mappers';
+import { AwardOrderPointsUseCase } from '../points/award-order-points.use-case';
 
 @Injectable()
 export class DeliverOrderUseCase {
   constructor(
     @Inject(ORDER_REPOSITORY)
     private readonly orderRepository: IOrderRepository,
+    private readonly awardOrderPointsUseCase: AwardOrderPointsUseCase,
   ) {}
 
   /** Mark an order as manually fulfilled by an admin. */
@@ -27,6 +29,9 @@ export class DeliverOrderUseCase {
       deliveryNote: props.deliveryNote,
     });
 
-    return OrderMapper.toResponse(updated);
+    // Award loyalty points only when the transaction is completed (DELIVERED)
+    await this.awardOrderPointsUseCase.execute(updated);
+
+    return OrderMapper.toDetailResponse(updated);
   }
 }

@@ -17,6 +17,7 @@ export const QUEUE_NAMES = {
   ACTIVITY_LOG: 'activity-log',
   NOTIFICATION: 'notification',
   FILE_PROCESSING: 'file-processing',
+  MEILISEARCH_SYNC: 'meilisearch-sync',
 } as const;
 
 /** Activity log actions */

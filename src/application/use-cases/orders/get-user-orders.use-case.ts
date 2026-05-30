@@ -14,15 +14,32 @@ export class GetUserOrdersUseCase {
   /** List orders that belong to a specific user. */
   async execute(input: ListOrdersInputDto): Promise<{
     items: OrderResponseDto[];
+    data: OrderResponseDto[];
     total: number;
+    nextCursor: string | null;
+    hasNextPage: boolean;
+    limit?: number;
   }> {
     const result = await this.orderRepository.findByUserId(input.userId, {
       skip: input.skip,
       take: input.take,
+      status: input.status,
+      search: input.search,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      sortBy: input.sortBy,
+      cursor: input.cursor,
     });
+    const mappedItems = result.items.map((order) =>
+      OrderMapper.toBuyerSummaryResponse(order),
+    );
     return {
-      items: result.items.map((order) => OrderMapper.toResponse(order)),
+      items: mappedItems,
+      data: mappedItems,
       total: result.total,
+      nextCursor: result.nextCursor,
+      hasNextPage: result.hasNextPage,
+      limit: result.limit,
     };
   }
 }

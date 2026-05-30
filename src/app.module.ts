@@ -2,12 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PrismaModule } from './infrastructure/prisma';
 import { ApplicationModule } from './application/application.module';
 import { PresentationModule } from './presentation';
 import { ActivityLogService } from './application/services';
-import { ACTIVITY_LOG_REPOSITORY } from './domain/repositories/tokens';
-import { PrismaActivityLogRepository } from './infrastructure/repositories';
 import { GlobalExceptionFilter } from './presentation/filters';
 import {
   ActivityLogInterceptor,
@@ -20,14 +19,18 @@ import {
   redisConfig,
   minioConfig,
   jwtConfig,
-  xenditConfig,
+  duitkuConfig,
   throttleConfig,
+  meilisearchConfig,
 } from './config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 @Module({
   imports: [
+    // Global Event Emitter
+    EventEmitterModule.forRoot(),
+
     // Global config — loads .env and typed configs
     ConfigModule.forRoot({
       isGlobal: true,
@@ -38,8 +41,9 @@ import { AppService } from './app.service';
         redisConfig,
         minioConfig,
         jwtConfig,
-        xenditConfig,
+        duitkuConfig,
         throttleConfig,
+        meilisearchConfig,
       ],
     }),
 
@@ -64,10 +68,6 @@ import { AppService } from './app.service';
   providers: [
     AppService,
     ActivityLogService,
-    {
-      provide: ACTIVITY_LOG_REPOSITORY,
-      useClass: PrismaActivityLogRepository,
-    },
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,

@@ -14,6 +14,7 @@ function makeCoupon(overrides: Partial<CouponProps> = {}): Coupon {
     usedCount: 0,
     expiresAt: new Date('2026-12-31T00:00:00.000Z'),
     isActive: true,
+    userId: null,
     createdAt: now,
     updatedAt: now,
     ...overrides,

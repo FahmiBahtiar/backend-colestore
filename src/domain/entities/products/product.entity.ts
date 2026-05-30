@@ -12,8 +12,16 @@ export interface ProductProps {
   hasVariants: boolean;
   stockQuantity: number | null;
   digitalFileKey: string | null;
+  imageKey?: string | null;
   categoryId: string | null;
   createdById: string;
+  checkoutFields?: {
+    id: string;
+    productId: string;
+    label: string;
+    type: string;
+    isRequired: boolean;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,7 +34,7 @@ export class Product extends BaseEntity {
 
   private constructor(props: ProductProps) {
     super(props);
-    this.props = { ...props };
+    this.props = { ...props, imageKey: props.imageKey ?? null };
     this.validate();
   }
 
@@ -38,6 +46,11 @@ export class Product extends BaseEntity {
   /** Product base price. */
   get basePrice(): number {
     return this.props.basePrice;
+  }
+
+  /** Dynamic fields for product checkout. */
+  get checkoutFields(): ProductProps['checkoutFields'] {
+    return this.props.checkoutFields;
   }
 
   /** Whether this product uses variants for stock and price. */

@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
+import { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 
 /**
@@ -30,14 +31,24 @@ async function bootstrap(): Promise<void> {
   app.setGlobalPrefix(apiPrefix);
 
   // Security headers
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
 
   // CORS
   app.enableCors({
     origin: corsOrigin,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'X-Idempotency-Key',
+    ],
   });
 
   // Parse cookies
@@ -45,6 +56,15 @@ async function bootstrap(): Promise<void> {
 
   // Response compression
   app.use(compression());
+
+  // Log all incoming requests in development/testing only, reusing a single logger instance to prevent overhead
+  if (nodeEnv !== 'production') {
+    const requestLogger = new Logger('IncomingRequest');
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      requestLogger.log(`${req.method} ${req.url}`);
+      next();
+    });
+  }
 
   // Global validation pipe — validates all incoming DTOs
   app.useGlobalPipes(
@@ -82,6 +102,7 @@ async function bootstrap(): Promise<void> {
       .addTag('orders', 'Order management')
       .addTag('coupons', 'Coupon management')
       .addTag('admin', 'Admin dashboard')
+      .addTag('activity-logs', 'Audit log endpoints')
       .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);

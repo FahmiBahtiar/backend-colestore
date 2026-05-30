@@ -10,6 +10,7 @@ export interface CouponResponseDto {
   usedCount: number;
   expiresAt: Date | null;
   isActive: boolean;
+  userId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +28,7 @@ export interface CreateCouponInputDto {
 export interface ValidateCouponInputDto {
   code: string;
   orderAmount: number;
+  userId?: string | null;
 }
 
 export interface ValidateCouponResultDto {

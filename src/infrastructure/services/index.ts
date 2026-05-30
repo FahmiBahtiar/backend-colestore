@@ -1,2 +1,2 @@
 export { MinioService } from './minio.service';
-export { XenditService } from './xendit.service';
+export { DuitkuService } from './duitku.service';

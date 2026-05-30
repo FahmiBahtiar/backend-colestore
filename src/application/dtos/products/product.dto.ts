@@ -1,3 +1,10 @@
+export interface ProductCheckoutFieldDto {
+  id?: string;
+  label: string;
+  type: string; // TEXT, TEXTAREA
+  isRequired: boolean;
+}
+
 export interface ProductResponseDto {
   id: string;
   name: string;
@@ -8,10 +15,14 @@ export interface ProductResponseDto {
   hasVariants: boolean;
   stockQuantity: number | null;
   digitalFileKey: string | null;
+  imageKey: string | null;
+  imageUrl?: string | null;
   categoryId: string | null;
   createdById: string;
   createdAt: Date;
   updatedAt: Date;
+  variants?: ProductVariantResponseDto[];
+  checkoutFields?: ProductCheckoutFieldDto[];
 }
 
 export interface ProductVariantResponseDto {
@@ -32,8 +43,10 @@ export interface CreateProductInputDto {
   hasVariants?: boolean;
   stockQuantity?: number | null;
   digitalFileKey?: string | null;
+  imageKey?: string | null;
   categoryId?: string | null;
   createdById: string;
+  checkoutFields?: ProductCheckoutFieldDto[];
 }
 
 export interface UpdateProductInputDto {
@@ -44,7 +57,9 @@ export interface UpdateProductInputDto {
   isActive?: boolean;
   stockQuantity?: number | null;
   digitalFileKey?: string | null;
+  imageKey?: string | null;
   categoryId?: string | null;
+  checkoutFields?: ProductCheckoutFieldDto[];
 }
 
 export interface CreateProductVariantInputDto {
@@ -58,4 +73,6 @@ export interface ListProductsInputDto {
   skip?: number;
   take?: number;
   categoryId?: string;
+  search?: string;
+  includeInactive?: boolean;
 }

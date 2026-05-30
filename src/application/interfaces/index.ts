@@ -1,8 +1,11 @@
 export {
   PAYMENT_GATEWAY,
   type CreatePaymentInvoiceInput,
+  type CreatePaymentRequestInput,
   type IPaymentGatewayPort,
   type PaymentInvoiceResult,
+  type PaymentRequestResult,
+  type PaymentMethodOption,
   type PaymentWebhookPayload,
 } from './payment-gateway.port';
 export type {

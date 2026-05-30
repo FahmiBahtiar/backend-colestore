@@ -2,41 +2,86 @@ import { OrderStatus } from '../../../domain/entities';
 
 export interface OrderResponseDto {
   id: string;
-  userId: string;
+  userId: string | null;
+  customerEmail: string;
+  customerWhatsapp: string;
   totalAmount: number;
   discountAmount: number;
   finalAmount: number;
   status: OrderStatus;
-  xenditInvoiceId: string | null;
+  paymentGatewayInvoiceId: string | null;
+  paymentGatewayInvoiceUrl: string | null;
+  paymentGatewayExpiresAt: Date | null;
+  paymentGatewayRequestId: string | null;
+  paymentMethodType: string | null;
+  paymentChannel: string | null;
+  paymentInstructions: Record<string, unknown> | null;
   paymentProof: string | null;
   deliveredAt: Date | null;
   deliveredById: string | null;
+  deliveredBy?: { id: string; email: string; name: string | null } | null;
+  user?: { id: string; email: string; name: string | null } | null;
   deliveryNote: string | null;
   couponId: string | null;
+  couponCode?: string | null;
   createdAt: Date;
   updatedAt: Date;
+  items?: any[];
+}
+
+export interface OrderItemCheckoutAnswerInputDto {
+  checkoutFieldId?: string | null;
+  label: string;
+  value: string;
 }
 
 export interface OrderItemInputDto {
   productId: string;
   variantId?: string | null;
   quantity: number;
+  checkoutAnswers?: OrderItemCheckoutAnswerInputDto[];
 }
 
 export interface PlaceOrderInputDto {
-  userId: string;
+  userId?: string | null;
   items: OrderItemInputDto[];
   couponCode?: string | null;
+  customerEmail: string;
+  customerWhatsapp: string;
+  paymentMethodType: string;
+  paymentChannel: string;
+  idempotencyKey?: string | null;
 }
 
 export interface PlaceOrderResultDto {
   order: OrderResponseDto;
-  invoiceId: string | null;
-  invoiceUrl: string | null;
+  paymentRequestId: string | null;
+  paymentInstructions: Record<string, unknown> | null;
+  /** @deprecated kept for backward compatibility */
+  invoiceId?: string | null;
+  /** @deprecated kept for backward compatibility */
+  invoiceUrl?: string | null;
 }
 
 export interface ListOrdersInputDto {
   userId: string;
   skip?: number;
   take?: number;
+  status?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  sortBy?: string;
+  cursor?: string;
+}
+
+export interface ListAllOrdersInputDto {
+  skip?: number;
+  take?: number;
+  status?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  sortBy?: string;
+  cursor?: string;
 }

@@ -1,6 +1,15 @@
 export { AuthController } from './auth.controller';
+export { ActivityLogsController } from './activity-logs.controller';
+export { AdminDashboardController } from './admin-dashboard.controller';
+export { CategoriesController } from './categories.controller';
 export { CouponsController } from './coupons.controller';
 export { FulfillmentController } from './fulfillment.controller';
 export { OrdersController } from './orders.controller';
 export { PaymentsController } from './payments.controller';
 export { ProductsController } from './products.controller';
+export { UsersController } from './users.controller';
+export { PointsController } from './points.controller';
+export { PointRewardsController } from './point-rewards.controller';
+export { FaqsController } from './faqs.controller';
+export { BannersController } from './banners.controller';
+export { MediaController } from './media.controller';

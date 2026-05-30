@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Coupon } from '../../../domain/entities';
 import { ICouponRepository } from '../../../domain/repositories';
 import { COUPON_REPOSITORY } from '../../../domain/repositories/tokens';
@@ -22,6 +27,12 @@ export class ValidateCouponUseCase {
     );
     if (!couponRecord) {
       throw new NotFoundException('Coupon not found');
+    }
+
+    if (couponRecord.userId && couponRecord.userId !== input.userId) {
+      throw new BadRequestException(
+        'This coupon is not assigned to you or is invalid.',
+      );
     }
 
     const coupon = Coupon.create(couponRecord);

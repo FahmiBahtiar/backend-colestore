@@ -13,6 +13,7 @@ export interface CouponProps {
   usedCount: number;
   expiresAt: Date | null;
   isActive: boolean;
+  userId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

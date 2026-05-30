@@ -11,12 +11,20 @@ export type OrderStatus =
 
 export interface OrderProps {
   id: string;
-  userId: string;
+  userId: string | null;
+  customerEmail: string;
+  customerWhatsapp: string;
   totalAmount: number;
   discountAmount: number;
   finalAmount: number;
   status: OrderStatus;
-  xenditInvoiceId: string | null;
+  paymentGatewayInvoiceId: string | null;
+  paymentGatewayInvoiceUrl: string | null;
+  paymentGatewayExpiresAt: Date | null;
+  paymentGatewayRequestId: string | null;
+  paymentMethodType: string | null;
+  paymentChannel: string | null;
+  paymentInstructions: Record<string, unknown> | null;
   paymentProof: string | null;
   deliveredAt: Date | null;
   deliveredById: string | null;
@@ -48,16 +56,39 @@ export class Order extends BaseEntity {
     return this.props.status;
   }
 
-  /** Attach payment invoice while order is pending. */
-  attachInvoice(invoiceId: string): void {
+  /** Attach payment invoice while order is pending (legacy hosted checkout). */
+  attachInvoice(
+    invoiceId: string,
+    invoiceUrl?: string | null,
+    expiresAt?: Date | null,
+  ): void {
     this.ensureStatus(['PENDING']);
     this.requireNonEmpty(invoiceId, 'Invoice id is required');
-    this.props.xenditInvoiceId = invoiceId;
+    this.props.paymentGatewayInvoiceId = invoiceId;
+    this.props.paymentGatewayInvoiceUrl =
+      invoiceUrl ?? this.props.paymentGatewayInvoiceUrl;
+    this.props.paymentGatewayExpiresAt =
+      expiresAt ?? this.props.paymentGatewayExpiresAt;
+  }
+
+  /** Attach payment request data while order is pending (custom checkout). */
+  attachPaymentRequest(
+    paymentRequestId: string,
+    paymentMethodType: string,
+    paymentChannel: string,
+    paymentInstructions: Record<string, unknown> | null,
+  ): void {
+    this.ensureStatus(['PENDING']);
+    this.requireNonEmpty(paymentRequestId, 'Payment request id is required');
+    this.props.paymentGatewayRequestId = paymentRequestId;
+    this.props.paymentMethodType = paymentMethodType;
+    this.props.paymentChannel = paymentChannel;
+    this.props.paymentInstructions = paymentInstructions;
   }
 
   /** Mark order as paid after trusted payment confirmation. */
   markPaid(paymentProof?: string | null): void {
-    this.ensureStatus(['PENDING']);
+    this.ensureStatus(['PENDING', 'CANCELLED']);
     this.props.status = 'PAID';
     this.props.paymentProof = paymentProof ?? this.props.paymentProof;
   }
@@ -96,7 +127,17 @@ export class Order extends BaseEntity {
   }
 
   private validate(): void {
-    this.requireNonEmpty(this.props.userId, 'Order user id is required');
+    if (this.props.userId !== null) {
+      this.requireNonEmpty(this.props.userId, 'Order user id is required');
+    }
+    this.requireNonEmpty(
+      this.props.customerEmail,
+      'Customer email is required',
+    );
+    this.requireNonEmpty(
+      this.props.customerWhatsapp,
+      'Customer whatsapp is required',
+    );
     this.requireNonNegative(
       this.props.totalAmount,
       'Order total amount cannot be negative',

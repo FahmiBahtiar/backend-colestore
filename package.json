@@ -23,6 +23,7 @@
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "meilisearch:backfill": "ts-node src/scripts/backfill-meilisearch.ts",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -36,11 +37,14 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/event-emitter": "^3.1.0",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-socket.io": "^11.1.24",
     "@nestjs/swagger": "^11.4.4",
     "@nestjs/throttler": "^6.5.0",
+    "@nestjs/websockets": "^11.1.24",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "bcrypt": "^6.0.0",
@@ -52,14 +56,15 @@
     "dotenv": "^17.4.2",
     "helmet": "^8.1.0",
     "ioredis": "^5.10.1",
+    "meilisearch": "^0.58.0",
     "minio": "^8.0.7",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.21.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "uuid": "^14.0.0",
-    "xendit-node": "^7.0.0"
+    "socket.io": "^4.8.3",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
@@ -74,6 +79,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.1.0",
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.20.0",

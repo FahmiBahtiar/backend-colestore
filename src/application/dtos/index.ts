@@ -1,6 +1,12 @@
 export type * from './auth';
+export type * from './admin';
+export type * from './categories';
 export type * from './coupons';
 export type * from './fulfillment';
 export type * from './orders';
 export type * from './payments';
 export type * from './products';
+export type * from './users';
+export type * from './points';
+export type * from './faqs';
+export type * from './banners/banner.dto';
