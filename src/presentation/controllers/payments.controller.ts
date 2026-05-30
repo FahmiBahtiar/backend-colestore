@@ -26,6 +26,7 @@ import {
 import { JwtAuthGuard, RolesGuard } from '../guards';
 import { UpdatePaymentConfigDto } from '../dtos';
 import { Roles } from '../../common/decorators';
+import { SkipTransform } from '../../common/decorators/skip-transform.decorator';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -72,6 +73,7 @@ export class PaymentsController {
 
   /** Allow Duitku or verification services to ping the webhook URL via GET */
   @Get('duitku/webhook')
+  @SkipTransform()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify Duitku webhook URL' })
   @ApiResponse({ status: 200, description: 'Webhook URL verified.' })
@@ -83,6 +85,7 @@ export class PaymentsController {
 
   /** Process Duitku webhook callbacks (Direct V2 callback) and return plain text OK response. */
   @Post('duitku/webhook')
+  @SkipTransform()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Process Duitku webhook' })
   @ApiResponse({ status: 200, description: 'Webhook processed.' })

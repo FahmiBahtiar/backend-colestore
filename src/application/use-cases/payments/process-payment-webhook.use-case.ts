@@ -70,20 +70,25 @@ export class ProcessPaymentWebhookUseCase {
 
     if (webhook.status === 'PAID') {
       // Validate payment callback amount against order amount to prevent tampering
-      if (webhook.amount !== undefined) {
-        const expectedAmount = Number(orderRecord.finalAmount);
-        const paidAmount = Number(webhook.amount);
+      if (webhook.amount === undefined || webhook.amount === null) {
+        this.logger.error(
+          `Payment amount is missing in webhook callback for order ${order.id}.`,
+        );
+        throw new BadRequestException('Payment amount is required.');
+      }
 
-        if (!Number.isFinite(expectedAmount) || !Number.isFinite(paidAmount)) {
-          throw new BadRequestException('Invalid payment amount.');
-        }
+      const expectedAmount = Number(orderRecord.finalAmount);
+      const paidAmount = Number(webhook.amount);
 
-        if (expectedAmount !== paidAmount) {
-          this.logger.error(
-            `Amount mismatch on payment callback for order ${order.id}. Expected: ${expectedAmount}, Paid: ${paidAmount}`,
-          );
-          throw new BadRequestException('Payment amount mismatch.');
-        }
+      if (!Number.isFinite(expectedAmount) || !Number.isFinite(paidAmount)) {
+        throw new BadRequestException('Invalid payment amount.');
+      }
+
+      if (expectedAmount !== paidAmount) {
+        this.logger.error(
+          `Amount mismatch on payment callback for order ${order.id}. Expected: ${expectedAmount}, Paid: ${paidAmount}`,
+        );
+        throw new BadRequestException('Payment amount mismatch.');
       }
       order.markPaid(webhook.paymentProof ?? null);
     } else if (webhook.status === 'EXPIRED' || webhook.status === 'FAILED') {

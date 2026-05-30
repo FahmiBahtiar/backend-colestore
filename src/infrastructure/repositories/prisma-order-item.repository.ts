@@ -40,33 +40,35 @@ export interface IOrderItemRepository {
 export class PrismaOrderItemRepository implements IOrderItemRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Bulk-create order items */
+  /** Bulk-create order items atomically */
   async createMany(items: Omit<OrderItemEntity, 'id'>[]): Promise<number> {
-    let count = 0;
-    for (const item of items) {
-      await this.prisma.orderItem.create({
-        data: {
-          orderId: item.orderId,
-          productId: item.productId,
-          variantId: item.variantId,
-          couponId: item.couponId,
-          quantity: item.quantity,
-          unitPrice: new Prisma.Decimal(item.unitPrice),
-          subtotal: new Prisma.Decimal(item.subtotal),
-          ...(item.checkoutAnswers && {
-            checkoutAnswers: {
-              create: item.checkoutAnswers.map((ans) => ({
-                checkoutFieldId: ans.checkoutFieldId,
-                label: ans.label,
-                value: ans.value,
-              })),
-            },
-          }),
-        },
-      });
-      count++;
-    }
-    return count;
+    return this.prisma.$transaction(async (tx) => {
+      let count = 0;
+      for (const item of items) {
+        await tx.orderItem.create({
+          data: {
+            orderId: item.orderId,
+            productId: item.productId,
+            variantId: item.variantId,
+            couponId: item.couponId,
+            quantity: item.quantity,
+            unitPrice: new Prisma.Decimal(item.unitPrice),
+            subtotal: new Prisma.Decimal(item.subtotal),
+            ...(item.checkoutAnswers && {
+              checkoutAnswers: {
+                create: item.checkoutAnswers.map((ans) => ({
+                  checkoutFieldId: ans.checkoutFieldId,
+                  label: ans.label,
+                  value: ans.value,
+                })),
+              },
+            }),
+          },
+        });
+        count++;
+      }
+      return count;
+    });
   }
 
   /** Find all items for an order */

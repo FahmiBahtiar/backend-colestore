@@ -1,4 +1,9 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   IProductRepository,
   ProductEntity,
@@ -8,6 +13,10 @@ import { ListProductsInputDto, ProductResponseDto } from '../../dtos';
 import { ProductMapper } from '../../mappers';
 import { MinioService } from '../../../infrastructure/services/minio.service';
 import { MeilisearchService } from '../../../infrastructure/meilisearch';
+
+function escapeFilterValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
 
 @Injectable()
 export class ListProductsUseCase {
@@ -40,7 +49,12 @@ export class ListProductsUseCase {
       }
 
       if (input.categoryId) {
-        filterArray.push(`categoryId = "${input.categoryId}"`);
+        if (!/^[a-zA-Z0-9\-_]+$/.test(input.categoryId)) {
+          throw new BadRequestException('Invalid category ID filter format.');
+        }
+        filterArray.push(
+          `categoryId = "${escapeFilterValue(input.categoryId)}"`,
+        );
       }
 
       const take = Math.min(input.take || 20, 100);
@@ -91,20 +105,9 @@ export class ListProductsUseCase {
 
     const items = await Promise.all(
       productsList.map(async (product) => {
-        let imageUrl: string | null = null;
-        if (product.imageKey) {
-          try {
-            imageUrl = await this.minioService.getPresignedUrl(
-              product.imageKey,
-            );
-          } catch (err) {
-            const error = err as Error;
-            this.logger.error(
-              `Failed to resolve presigned URL for product list (ID: ${product.id}, imageKey: ${product.imageKey}): ${error.message}`,
-              error.stack,
-            );
-          }
-        }
+        const imageUrl = await this.minioService.safeGetPublicMediaUrl(
+          product.imageKey,
+        );
         return ProductMapper.toResponse(product, imageUrl);
       }),
     );

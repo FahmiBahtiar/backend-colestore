@@ -1,4 +1,11 @@
-import { Controller, Get, Res, Req, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Res,
+  Req,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
@@ -19,6 +26,19 @@ export class MediaController {
 
     if (!path) {
       throw new NotFoundException('File path is required');
+    }
+
+    // Prevent directory traversal attacks
+    if (path.includes('..') || path.startsWith('/')) {
+      throw new ForbiddenException('Invalid file path');
+    }
+
+    // Limit public media retrieval to designated public asset folders only
+    const allowedPrefixes = ['banners/', 'categories/', 'products/images/'];
+    const isAllowed = allowedPrefixes.some((prefix) => path.startsWith(prefix));
+
+    if (!isAllowed) {
+      throw new ForbiddenException('Access denied for this media path');
     }
 
     try {

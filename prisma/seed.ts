@@ -71,15 +71,20 @@ async function main() {
     },
   ];
 
-  // Clean up any stale configs from previous iterations
-  const activeChannels = configs.map((c) => c.channel);
-  await prisma.paymentMethodConfig.deleteMany({
-    where: {
-      channel: {
-        notIn: activeChannels,
+  // Clean up any stale configs from previous iterations (development/test only to protect production configs)
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.NODE_ENV === 'test'
+  ) {
+    const activeChannels = configs.map((c) => c.channel);
+    await prisma.paymentMethodConfig.deleteMany({
+      where: {
+        channel: {
+          notIn: activeChannels,
+        },
       },
-    },
-  });
+    });
+  }
 
   for (const config of configs) {
     await prisma.paymentMethodConfig.upsert({

@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Product } from '../../../domain/entities';
 import {
@@ -42,7 +43,7 @@ export class UpdateProductUseCase {
         categoryId: input.categoryId ?? existing.categoryId,
         checkoutFields: input.checkoutFields
           ? input.checkoutFields.map((f) => ({
-              id: f.id ?? 'new-field',
+              id: f.id ?? crypto.randomUUID(),
               productId: input.id,
               label: f.label,
               type: f.type,
@@ -80,17 +81,9 @@ export class UpdateProductUseCase {
       }
     }
 
-    let imageUrl: string | null = null;
-    if (updated.imageKey) {
-      try {
-        imageUrl = await this.minioService.getPresignedUrl(updated.imageKey);
-      } catch (err) {
-        this.logger.error(
-          `Failed to resolve presigned URL for product image productId=${input.id} imageKey=${updated.imageKey}`,
-          err instanceof Error ? err.stack : String(err),
-        );
-      }
-    }
+    const imageUrl = await this.minioService.safeGetPublicMediaUrl(
+      updated.imageKey,
+    );
 
     return ProductMapper.toResponse(updated, imageUrl);
   }
@@ -115,7 +108,7 @@ export class UpdateProductUseCase {
       ...(input.categoryId !== undefined && { categoryId: input.categoryId }),
       ...(input.checkoutFields !== undefined && {
         checkoutFields: input.checkoutFields.map((f) => ({
-          id: f.id ?? 'new-field',
+          id: f.id ?? crypto.randomUUID(),
           productId: input.id,
           label: f.label,
           type: f.type,

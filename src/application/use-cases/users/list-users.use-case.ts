@@ -1,9 +1,18 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { IUserRepository, UserEntity } from '../../../domain/repositories';
 import { USER_REPOSITORY } from '../../../domain/repositories/tokens';
 import { ListUsersInputDto, UserResponseDto } from '../../dtos';
 import { UserMapper } from '../../mappers';
 import { MeilisearchService } from '../../../infrastructure/meilisearch';
+
+function escapeFilterValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
 
 @Injectable()
 export class ListUsersUseCase {
@@ -27,7 +36,11 @@ export class ListUsersUseCase {
     if (useSearch) {
       const filterArray: string[] = [];
       if (input.role) {
-        filterArray.push(`role = "${input.role}"`);
+        const allowedRoles = ['ADMIN', 'BUYER'];
+        if (!allowedRoles.includes(input.role)) {
+          throw new BadRequestException('Invalid role filter.');
+        }
+        filterArray.push(`role = "${escapeFilterValue(input.role)}"`);
       }
 
       const take = Math.min(input.take || 20, 100);

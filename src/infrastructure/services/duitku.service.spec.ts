@@ -108,6 +108,7 @@ describe('DuitkuService', () => {
         paymentRequestId: reference,
         status: 'PAID',
         paymentProof: reference,
+        amount: amount,
       });
     });
 

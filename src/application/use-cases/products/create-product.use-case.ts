@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
 import { Product, ProductProps } from '../../../domain/entities';
 import {
@@ -29,8 +30,9 @@ export class CreateProductUseCase {
     }
 
     const now = new Date();
+    const productId = crypto.randomUUID();
     const product = Product.create({
-      id: 'new-product',
+      id: productId,
       name: input.name,
       slug: input.slug,
       description: input.description ?? null,
@@ -44,8 +46,8 @@ export class CreateProductUseCase {
       createdById: input.createdById,
       checkoutFields: input.checkoutFields
         ? input.checkoutFields.map((f) => ({
-            id: f.id ?? 'new-field',
-            productId: 'new-product',
+            id: f.id ?? crypto.randomUUID(),
+            productId: productId,
             label: f.label,
             type: f.type,
             isRequired: f.isRequired,
@@ -62,17 +64,9 @@ export class CreateProductUseCase {
 
     this.eventEmitter.emit('product.created', { productId: created.id });
 
-    let imageUrl: string | null = null;
-    if (created.imageKey) {
-      try {
-        imageUrl = await this.minioService.getPresignedUrl(created.imageKey);
-      } catch (err) {
-        this.logger.error(
-          `Failed to resolve presigned URL for product image ${created.imageKey}`,
-          err instanceof Error ? err.stack : String(err),
-        );
-      }
-    }
+    const imageUrl = await this.minioService.safeGetPublicMediaUrl(
+      created.imageKey,
+    );
 
     return ProductMapper.toResponse(created, imageUrl);
   }

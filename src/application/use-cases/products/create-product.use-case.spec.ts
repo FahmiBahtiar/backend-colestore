@@ -5,11 +5,15 @@ import {
   ProductEntity,
 } from '../../../domain/repositories';
 import { MinioService } from '../../../infrastructure/services/minio.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('CreateProductUseCase', () => {
   const now = new Date('2026-05-23T00:00:00.000Z');
   let repository: jest.Mocked<IProductRepository>;
-  let minioService: jest.Mocked<Pick<MinioService, 'getPresignedUrl'>>;
+  let minioService: jest.Mocked<
+    Pick<MinioService, 'getPresignedUrl' | 'safeGetPublicMediaUrl'>
+  >;
+  let eventEmitter: jest.Mocked<Pick<EventEmitter2, 'emit'>>;
   let useCase: CreateProductUseCase;
 
   beforeEach(() => {
@@ -21,6 +25,7 @@ describe('CreateProductUseCase', () => {
       delete: jest.fn(),
       findBySlug: jest.fn(),
       findActiveProducts: jest.fn(),
+      findByIds: jest.fn(),
     };
     minioService = {
       getPresignedUrl: jest
@@ -28,10 +33,23 @@ describe('CreateProductUseCase', () => {
         .mockResolvedValue(
           'http://localhost:9000/colestore/products/image.png',
         ),
+      safeGetPublicMediaUrl: jest
+        .fn()
+        .mockImplementation((key) =>
+          key
+            ? Promise.resolve(
+                'http://localhost:9000/colestore/products/image.png',
+              )
+            : Promise.resolve(null),
+        ),
+    };
+    eventEmitter = {
+      emit: jest.fn(),
     };
     useCase = new CreateProductUseCase(
       repository,
       minioService as jest.Mocked<MinioService>,
+      eventEmitter as unknown as EventEmitter2,
     );
   });
 
@@ -66,7 +84,12 @@ describe('CreateProductUseCase', () => {
         categoryId: created.categoryId,
         createdById: created.createdById,
       }),
-    ).resolves.toEqual({ ...created, imageUrl: null });
+    ).resolves.toEqual({
+      ...created,
+      imageUrl: null,
+      checkoutFields: undefined,
+      variants: undefined,
+    });
 
     expect(repository.create.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({

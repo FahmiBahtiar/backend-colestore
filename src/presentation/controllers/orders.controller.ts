@@ -16,6 +16,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiTags,
+  ApiHeader,
 } from '@nestjs/swagger';
 import {
   CancelOrderUseCase,
@@ -44,11 +45,16 @@ export class OrdersController {
   @Post()
   @UseGuards(OptionalJwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
+  @ApiHeader({
+    name: 'x-idempotency-key',
+    required: true,
+    description: 'Unique key to prevent duplicate order placement',
+  })
   @ApiOperation({ summary: 'Place order' })
   @ApiResponse({ status: 201, description: 'Order placed.' })
   async placeOrder(
     @Body() body: PlaceOrderRequestDto,
-    @Headers('x-idempotency-key') idempotencyKey?: string,
+    @Headers('x-idempotency-key') idempotencyKey: string,
     @CurrentUser() user?: AuthenticatedUser | null,
   ) {
     if (!idempotencyKey || !idempotencyKey.trim()) {

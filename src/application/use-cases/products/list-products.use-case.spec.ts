@@ -1,13 +1,22 @@
+jest.mock('meilisearch', () => {
+  return {
+    Meilisearch: jest.fn(),
+  };
+});
+
 import { ListProductsUseCase } from './list-products.use-case';
 import {
   IProductRepository,
   ProductEntity,
 } from '../../../domain/repositories';
 import { MinioService } from '../../../infrastructure/services/minio.service';
-
+import type { MeilisearchService } from '../../../infrastructure/meilisearch';
 describe('ListProductsUseCase', () => {
   let repository: jest.Mocked<IProductRepository>;
-  let minioService: jest.Mocked<Pick<MinioService, 'getPresignedUrl'>>;
+  let minioService: jest.Mocked<
+    Pick<MinioService, 'getPresignedUrl' | 'safeGetPublicMediaUrl'>
+  >;
+  let meilisearch: jest.Mocked<Pick<MeilisearchService, 'search'>>;
   let useCase: ListProductsUseCase;
 
   beforeEach(() => {
@@ -19,6 +28,7 @@ describe('ListProductsUseCase', () => {
       delete: jest.fn(),
       findBySlug: jest.fn(),
       findActiveProducts: jest.fn(),
+      findByIds: jest.fn(),
     };
     minioService = {
       getPresignedUrl: jest
@@ -26,10 +36,23 @@ describe('ListProductsUseCase', () => {
         .mockResolvedValue(
           'http://localhost:9000/colestore/products/image.png',
         ),
+      safeGetPublicMediaUrl: jest
+        .fn()
+        .mockImplementation((key) =>
+          key
+            ? Promise.resolve(
+                'http://localhost:9000/colestore/products/image.png',
+              )
+            : Promise.resolve(null),
+        ),
+    };
+    meilisearch = {
+      search: jest.fn(),
     };
     useCase = new ListProductsUseCase(
       repository,
       minioService as jest.Mocked<MinioService>,
+      meilisearch as unknown as MeilisearchService,
     );
   });
 
@@ -57,7 +80,17 @@ describe('ListProductsUseCase', () => {
 
     await expect(
       useCase.execute({ skip: 0, take: 10, categoryId: 'category-1' }),
-    ).resolves.toEqual({ items: [{ ...product, imageUrl: null }], total: 1 });
+    ).resolves.toEqual({
+      items: [
+        {
+          ...product,
+          imageUrl: null,
+          checkoutFields: undefined,
+          variants: undefined,
+        },
+      ],
+      total: 1,
+    });
     expect(repository.findActiveProducts.mock.calls[0]?.[0]).toEqual({
       skip: 0,
       take: 10,

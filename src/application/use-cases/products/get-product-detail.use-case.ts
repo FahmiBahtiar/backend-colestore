@@ -22,18 +22,9 @@ export class GetProductDetailUseCase {
       throw new NotFoundException('Product not found');
     }
 
-    let imageUrl: string | null = null;
-    if (product.imageKey) {
-      try {
-        imageUrl = await this.minioService.getPresignedUrl(product.imageKey);
-      } catch (err) {
-        const error = err as Error;
-        this.logger.error(
-          `Failed to resolve presigned URL for product detail (ID: ${product.id}, imageKey: ${product.imageKey}): ${error.message}`,
-          error.stack,
-        );
-      }
-    }
+    const imageUrl = await this.minioService.safeGetPublicMediaUrl(
+      product.imageKey,
+    );
 
     return ProductMapper.toResponse(product, imageUrl);
   }

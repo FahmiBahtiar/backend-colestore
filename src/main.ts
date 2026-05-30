@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
-import express, { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 
 /**
@@ -37,10 +37,6 @@ async function bootstrap(): Promise<void> {
       crossOriginEmbedderPolicy: false,
     }),
   );
-
-  // Explicitly enable JSON and URL-encoded body parsing
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
 
   // CORS
   app.enableCors({

@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import {
   BadRequestException,
   Inject,
@@ -54,10 +55,7 @@ export class RedeemPointRewardUseCase {
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, '')
       .substring(0, 4);
-    const randomSuffix = Math.random()
-      .toString(36)
-      .substring(2, 8)
-      .toUpperCase();
+    const randomSuffix = crypto.randomBytes(3).toString('hex').toUpperCase();
     const couponCode = `RP-${sanitizedName}-${randomSuffix}`;
 
     // 5. Create the Coupon
